@@ -1,5 +1,5 @@
 import { Model, DataTypes } from "sequelize";
-import { sequelize } from "../database";
+import { sequelize } from "../modules/sequelize";
 
 class GameRoom extends Model {
     public room_id!: number;

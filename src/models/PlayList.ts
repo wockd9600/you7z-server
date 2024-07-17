@@ -1,5 +1,5 @@
 import { Model, DataTypes } from "sequelize";
-import { sequelize } from "../database";
+import { sequelize } from "../modules/sequelize";
 import User from "./User"; // Assuming you have a User model
 
 class PlayList extends Model {

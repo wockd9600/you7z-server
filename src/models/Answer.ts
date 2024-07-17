@@ -1,5 +1,5 @@
 import { Model, DataTypes } from 'sequelize';
-import { sequelize } from '../database';
+import { sequelize } from '../modules/sequelize';
 import GameSession from './GameSession';
 import User from './User';
 

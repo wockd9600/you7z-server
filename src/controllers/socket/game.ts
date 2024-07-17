@@ -1,6 +1,8 @@
 import { Socket, Namespace } from "socket.io";
 import autobind from "autobind-decorator";
 
+// jwt 확인
+
 export default class GameController {
     @autobind
     startGame(io: Namespace, socket: Socket) {
@@ -26,6 +28,8 @@ export default class GameController {
         // 노래 재생! emit
     }
 
+
+    // 여기요여기엄니어리ㅑㅁ넝랴ㅣㅓㅁ ㅣㅑ넝리ㅑㅓㅁ ㅣㄹ언 ㅣㅓ린머;ㅣㄹ어ㅣ
     // 다시 플레이도 있어야 한다.
 
     @autobind

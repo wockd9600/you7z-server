@@ -9,7 +9,7 @@ export default class GameController {
         // 시작한 방인지 확인함.
         // --- 시작한 방이 아닐 때 ---
         // (redis) 인원수 문제 없는지 확인
-        // (redis)인원수 한 명 추가
+        // (redis) 인원수 한 명 추가
         // --- 시작한 방일 때 --- (session table status)
         // ----- 게임에 참가 중인 인원이면 ---- (user score table에 있음. where session_id, user_id)
         // session table에 저장된 게임 설정 정보와
