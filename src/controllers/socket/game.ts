@@ -23,14 +23,23 @@ export default class GameController {
     playSong(io: Namespace, socket: Socket) {
         // room_code로 session_table row 가져옴
         // (redis) 플레이 준비 완료
-        // (redis) 유저들의 동영상 로딩이 전부 준비 되면
+        // --- (redis) 유저들의 동영상 로딩이 전부 준비 되면 ---
         // (redis) 준비 완료 초기화
         // 노래 재생! emit
+        
+        // client는 노래가 끝나면 바로 처음으로 돌림.
+        // full 버전은 계속 재생하고
+        // 1s 버전은 (1s, 1s, 1s, 2초 3초 5초)
     }
 
-
-    // 여기요여기엄니어리ㅑㅁ넝랴ㅣㅓㅁ ㅣㅑ넝리ㅑㅓㅁ ㅣㄹ언 ㅣㅓ린머;ㅣㄹ어ㅣ
-    // 다시 플레이도 있어야 한다.
+    @autobind
+    passSong(io: Namespace, socket: Socket) {
+        // room_code로 session_table row 가져옴
+        // (redis) 패스 신청
+        // --- (redis) 유저들이 모두 패스 신청하면 ---
+        // (redis) 패스 신청 초기화
+        // 노래 다시 선곡
+    }
 
     @autobind
     kickUser(io: Namespace, socket: Socket) {

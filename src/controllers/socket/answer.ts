@@ -19,7 +19,7 @@ export default class UserController {
         // session 테이블의 playlist id로 플레이리스트 가져옴.
         // 랜덤으로 하나 뽑은 뒤
         // (redis) 현재 노래 설정
-        // 방에 있는 사람들에게 emit
+        // 방에 있는 사람들에게 url emit
     }
 
     // 다른 메서드들...

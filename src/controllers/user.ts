@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+
 import autobind from "autobind-decorator";
 import User from "../models/User";
 
@@ -7,8 +8,7 @@ export default class UserController {
     async patchName(req: Request, res: Response) {
         // 전달된 토큰에서 id를 추출
         // 전달된 텍스트 데이터로 이름 변경
-
-        const user_id = (req.user as { id: number }).user;
+        const user_id = (req.user as { id: number }).id;
         const nickname = (req.body as { nickname: string }).nickname;
 
         try {
