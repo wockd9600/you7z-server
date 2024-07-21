@@ -1,6 +1,7 @@
 import "dotenv/config";
 import cors from "cors";
 import express, { Request, Response, NextFunction } from "express";
+// import { sequelize } from "./modules/sequelize";
 // import RedisStore from "connect-redis"
 
 import initializeSocket from "./socket";
@@ -36,7 +37,20 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     res.status(500).json({ message: err.message });
 });
 
+
+
+// https://velog.io/@wlduq0150/Artillery-Artillery를-이용해-socket.io-부하테스트-해보기
 const ioServer = initializeSocket(app);
-ioServer.listen(8000, () => {
-    console.log("서버 시작");
+ioServer.listen(8000, async () => {
+    // test
+    // await sequelize
+    //     .authenticate()
+    //     .then(async () => {
+    //         console.log("connection success");
+    //     })
+    //     .catch((e) => {
+    //         console.log("TT : ", e);
+    //     });
+
+    // console.log("서버 시작");
 });

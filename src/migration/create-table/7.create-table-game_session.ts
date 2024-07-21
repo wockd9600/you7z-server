@@ -1,9 +1,9 @@
-import Users from "../../models/User";
+import GameSession from "../../models/GameSession";
 
 console.log("======Create User Table======");
 
-const create_table_user = async () => {
-    await Users.sync({ force: true })
+const create_table_game_session = async () => {
+    await GameSession.sync({ force: true })
         .then(() => {
             console.log("Success Create User Table");
         })
@@ -12,4 +12,4 @@ const create_table_user = async () => {
         });
 };
 
-create_table_user();
+create_table_game_session();

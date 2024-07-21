@@ -71,10 +71,9 @@ export class RedisUtil {
         // Fetch the scores of the current users
         // Create an array of promises to get the scores from Redis
 
-        const users = this.users;
-        if (users.length === 0) return [];
+        if (this.users.length === 0) return [];
 
-        const promises = users.map(async (user_id) => {
+        const promises = this.users.map(async (user_id) => {
             const userScoreKey = `session:${this.session_id}:user:${user_id}:score`;
             const score = await redisClient.get(userScoreKey);
             return parseInt(score || "0", 10);
@@ -136,12 +135,10 @@ export class RedisUtil {
 
     public async deleteUser(user_id: number): Promise<void> {
         try {
-            // Filter out the user to be deleted
-            const updatedUsers = this.users.filter((value) => value !== user_id);
-
-            // Update the users list in Redis
             const userKey = `session:${this.session_id}:user:${user_id}`;
             await redisClient.del(userKey);
+
+            this.users = this.users.filter((id) => id !== user_id) as number[];
         } catch (error) {
             console.error(`Failed to delete user ${user_id}:`, error);
         }
