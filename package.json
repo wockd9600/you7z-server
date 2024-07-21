@@ -15,6 +15,7 @@
     "@types/cors": "^2.8.17",
     "@types/socket.io": "^3.0.2",
     "autobind-decorator": "^2.4.0",
+    "axios": "^1.7.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
