@@ -63,7 +63,7 @@ GameSession.init(
     {
         sequelize,
         tableName: "game_session",
-        timestamps: false,
+        timestamps: true,
     }
 );
 

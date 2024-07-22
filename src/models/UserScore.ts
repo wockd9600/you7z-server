@@ -55,7 +55,7 @@ UserScore.init(
     {
         sequelize,
         tableName: "user_score",
-        timestamps: false,
+        timestamps: true,
     }
 );
 

@@ -3,7 +3,6 @@ import autobind from "autobind-decorator";
 
 import { loginOrSignUp, logout, refreshToken } from "../services/service";
 
-// db timestamp true, User status defalut 1
 export default class ServiceController {
     @autobind
     async login(req: Request, res: Response) {
