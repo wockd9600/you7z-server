@@ -1,17 +1,8 @@
 import { Request, Response } from "express";
 import autobind from "autobind-decorator";
-import { JwtPayload } from "jsonwebtoken";
 
-import { sequelize } from "../modules/sequelize";
-import User from "../models/User";
-import UserProfile from "../models/UserProfile";
+import { loginOrSignUp, logout, refreshToken } from "../services/service";
 
-import jwt from "../modules/jwt";
-
-import { getKaKaoUserInfo } from "../services/service";
-import { encrypt } from "../utils/security";
-
-// 이런 로직은 controller에 넣으면 되는지 services에 넣으면 되는지
 // db timestamp true, User status defalut 1
 export default class ServiceController {
     @autobind
@@ -25,42 +16,17 @@ export default class ServiceController {
 
         const { code } = req.body;
 
-        const transaction = await sequelize.transaction();
+        if (!code) {
+            return res.status(400).json({ error: "Kakao 인증 코드가 필요합니다." });
+        }
 
         try {
-            const kakao_user = await getKaKaoUserInfo(code);
-            if (kakao_user.err) throw new Error(kakao_user.err);
-
-            const kakao_id = kakao_user.id;
-            const refresh_token = encrypt();
-
-            const [user, created] = await User.findOrCreate({
-                where: { kakao_id },
-                defaults: {
-                    kakao_id,
-                    refresh_token,
-                },
-                transaction,
-            });
-
-            if (created) {
-                // 랜덤 닉네임 생성
-                const nickname = "asdf";
-                UserProfile.create({ user_id: user.user_id, nickname }, { transaction });
-            } else {
-                User.update({ refresh_token }, { where: { refresh_token } });
-            }
-
-            const access_token = await jwt.sign({ user_id: user.user_id });
-
-            await transaction.commit();
-
+            const { access_token, refresh_token } = await loginOrSignUp(code);
             return res.status(200).json({ token: access_token, index: refresh_token });
         } catch (error) {
             // 롤백
-            await transaction.rollback();
             console.error(`error login: `, error);
-            return res.status(500).json(error);
+            return res.status(500).json({ error: "로그인 중 오류가 발생했습니다." });
         }
     }
 
@@ -73,12 +39,11 @@ export default class ServiceController {
         const user_id = req.user!.user_id;
 
         try {
-            await User.update({ refresh_token: null }, { where: { user_id } });
-
+            await logout(user_id);
             return res.status(200).json({ success: true });
         } catch (error) {
             console.error(`error logout: `, error);
-            return res.status(500).json(error);
+            return res.status(500).json({ error });
         }
     }
 
@@ -94,17 +59,7 @@ export default class ServiceController {
         }
 
         try {
-            const tokenUser = (await jwt.decode(access_token)) as JwtPayload;
-            if (!tokenUser || typeof tokenUser === "string") throw new Error("don't exist token user");
-
-            const user = await User.findOne({ where: { user_id: tokenUser.user_id } });
-            if (user === null) throw new Error("don't exist db user");
-
-            const db_refresh_token = user.refresh_token;
-            if (refresh_token !== db_refresh_token) throw new Error("don't match refresh token");
-
-            const new_access_token = await jwt.sign(user);
-
+            const new_access_token = await refreshToken(access_token, refresh_token);
             return res.status(200).json({ token: new_access_token });
         } catch (error) {
             console.error(`error refresh toekn: `, error);
