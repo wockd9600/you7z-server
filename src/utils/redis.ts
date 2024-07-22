@@ -32,7 +32,7 @@ export class RedisUtil {
                 })
             );
 
-            this.users = users.filter((user_id) => user_id !== null) as number[];
+            this.users = users.filter((user_id) => user_id !== null);
         } catch (error) {
             console.error("Failed to fetch users:", error);
         }
@@ -138,7 +138,7 @@ export class RedisUtil {
             const userKey = `session:${this.session_id}:user:${user_id}`;
             await redisClient.del(userKey);
 
-            this.users = this.users.filter((id) => id !== user_id) as number[];
+            this.users = this.users.filter((id) => id !== user_id);
         } catch (error) {
             console.error(`Failed to delete user ${user_id}:`, error);
         }

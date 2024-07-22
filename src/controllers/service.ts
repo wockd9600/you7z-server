@@ -1,9 +1,12 @@
 import { Request, Response } from "express";
 import autobind from "autobind-decorator";
+import { JwtPayload } from "jsonwebtoken";
 
 import { sequelize } from "../modules/sequelize";
 import User from "../models/User";
 import UserProfile from "../models/UserProfile";
+
+import jwt from "../modules/jwt";
 
 import { getKaKaoUserInfo } from "../services/service";
 import { encrypt } from "../utils/security";
@@ -48,7 +51,7 @@ export default class ServiceController {
                 User.update({ refresh_token }, { where: { refresh_token } });
             }
 
-            const access_token = await jwt.sign(user.user_id);
+            const access_token = await jwt.sign({ user_id: user.user_id });
 
             await transaction.commit();
 
@@ -67,7 +70,7 @@ export default class ServiceController {
         // 전달된 토큰에서 id를 추출
         // delete refresh token, 입장 중인 방 있으면 퇴장
 
-        const user_id = (req.user as { id: number }).id;
+        const user_id = req.user!.user_id;
 
         try {
             await User.update({ refresh_token: null }, { where: { user_id } });
@@ -83,8 +86,7 @@ export default class ServiceController {
     async refresh(req: Request, res: Response) {
         // 전달된 토큰에서 id를 추출
         // 토큰 재발급 로직
-
-        const access_token = req.headers.access_token;
+        const access_token = (req.headers as { access_token: string }).access_token;
         const { refresh_token } = req.body;
 
         if (!access_token || !refresh_token) {
@@ -92,10 +94,10 @@ export default class ServiceController {
         }
 
         try {
-            const tokenUser = await jwt.decode(access_token);
-            if (!tokenUser) throw new Error("don't exist token user");
+            const tokenUser = (await jwt.decode(access_token)) as JwtPayload;
+            if (!tokenUser || typeof tokenUser === "string") throw new Error("don't exist token user");
 
-            const user = await User.findOne({ where: { user_id: tokenUser.id } });
+            const user = await User.findOne({ where: { user_id: tokenUser.user_id } });
             if (user === null) throw new Error("don't exist db user");
 
             const db_refresh_token = user.refresh_token;

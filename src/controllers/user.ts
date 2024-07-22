@@ -8,8 +8,8 @@ export default class UserController {
     async patchName(req: Request, res: Response) {
         // 전달된 토큰에서 id를 추출
         // 전달된 텍스트 데이터로 이름 변경
-        const user_id = (req.user as { id: number }).id;
-        const nickname = (req.body as { nickname: string }).nickname;
+        const user_id = req.user!.user_id;
+        const nickname = req.body.nickname;
 
         try {
             await User.update({ nickname }, { where: { user_id } });
