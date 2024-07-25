@@ -14,8 +14,12 @@ const isLoggedIn = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const decoded = await jwt.verify(token);
 
-        req.user = decoded as { user_id: number };
-        next();
+        if (typeof decoded === 'object' && decoded !== null && 'user_id' in decoded) {
+            req.user = decoded as { user_id: number };
+            next();
+        } else {
+            throw new Error("don't exist user_id");
+        }
     } catch (error: unknown) {
         if (error instanceof Error) {
             if (error.message === "jwt expired") {

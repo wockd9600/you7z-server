@@ -14,7 +14,7 @@ import IUserRepository from "../repositories/interfaces/user";
 
 import User from "../models/User";
 
-import { LoginRequestDto } from "../dto/user";
+import { LoginRequestDto, RefreshRequestDto, UserProfileDto } from "../dto/user";
 import UserProfile from "../models/UserProfile";
 
 export default class UserService {
@@ -123,7 +123,9 @@ export default class UserService {
     }
 
     @autobind
-    async refreshToken(access_token: string, refresh_token: string) {
+    async refreshToken(refreshDto: RefreshRequestDto) {
+        const { access_token, refresh_token } = refreshDto;
+
         try {
             const toekn_user = (await jwt.decode(access_token)) as JwtPayload;
             if (!toekn_user || typeof toekn_user === "string") throw new Error("토큰 사용자 없음");
@@ -143,7 +145,9 @@ export default class UserService {
     }
 
     @autobind
-    async setUserName(user_id: number, nickname: string) {
+    async setUserName(userProfileDto: UserProfileDto) {
+        const { user_id, nickname } = userProfileDto;
+
         try {
             const userProfileData = new UserProfile({ user_id, nickname });
             this.userRepository.updateUserProfile(userProfileData);

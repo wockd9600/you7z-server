@@ -1,4 +1,22 @@
-import { IsEmail, IsOptional, IsString, Length } from "class-validator";
+import { IsEmail, IsNumber, IsOptional, IsString, Length } from "class-validator";
+
+type AuthToken = {
+    access_token: string;
+    refresh_token: string;
+};
+
+export class AuthTokenDto {
+    @IsString()
+    access_token: string;
+
+    @IsString()
+    refresh_token: string;
+
+    constructor({ access_token, refresh_token }: AuthToken) {
+        this.access_token = access_token;
+        this.refresh_token = refresh_token;
+    }
+}
 
 export class LoginRequestDto {
     @IsString()
@@ -10,15 +28,20 @@ export class LoginRequestDto {
     }
 }
 
-export class LoginReponseDto {
-    @IsString()
-    access_token: string;
-    @IsString()
-    refresh_token: string;
+export class LoginResponseDto extends AuthTokenDto {}
 
-    constructor(token: { access_token: string; refresh_token: string }) {
-        const { access_token, refresh_token } = token;
-        this.access_token = access_token;
-        this.refresh_token = refresh_token;
+export class RefreshRequestDto extends AuthTokenDto {}
+export class RefreshResponsetDto extends AuthTokenDto {}
+
+export class UserProfileDto {
+    @IsNumber()
+    user_id: number;
+
+    @IsString()
+    nickname: string;
+
+    constructor(user_id: number, nickname: string) {
+        this.user_id = user_id;
+        this.nickname = nickname;
     }
 }
