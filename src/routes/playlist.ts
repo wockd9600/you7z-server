@@ -1,8 +1,11 @@
 import { Router } from "express";
+
+import PlayListService from "../services/playlist";
 import PlayListController from "../controllers/playlist";
 
 const router = Router();
-const controller = new PlayListController();
+const service = new PlayListService();
+const controller = new PlayListController(service);
 
 /* GET */
 router.get("/popular", controller.getPopularPlayList);
