@@ -5,8 +5,7 @@ import express, { Request, Response, NextFunction } from "express";
 // import { sequelize } from "./modules/sequelize";
 // import RedisStore from "connect-redis"
 
-import logger from "./config/logger";
-
+import logError from "./utils/error";
 import morganMiddleware from "./middlewares/morgan";
 
 import initializeSocket from "./socket";
@@ -45,7 +44,7 @@ app.get("/error", (req, res, next) => {
     next(err);
 });
 
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
     //     const statusCode = error.status;
     //     res.status(statusCode).send(error.message);
 
@@ -53,8 +52,8 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     //     const truncatedStack = stackLines.slice(0, 5).join("\n");
     //     const reqBodyString = JSON.stringify(req.body);
     //     logger.error(`[${req.method}] ${req.path} | ${statusCode} | [REQUEST] ${reqBodyString} | ${truncatedStack}`);
-    logger.error(`${500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-    res.status(500).json({ message: err.message });
+    logError(error, req);
+    res.status(500).json({ message: error.message });
 });
 
 // https://velog.io/@wlduq0150/Artillery-Artillery를-이용해-socket.io-부하테스트-해보기

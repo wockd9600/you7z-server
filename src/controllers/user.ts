@@ -3,6 +3,8 @@ import autobind from "autobind-decorator";
 
 import UserService from "../services/user";
 
+import logError from "../utils/error";
+
 import { LoginRequestDto, LoginResponseDto, RefreshRequestDto, RefreshResponsetDto, UserProfileDto } from "../dto/user";
 
 export default class UserController {
@@ -26,7 +28,7 @@ export default class UserController {
             const loginResponseDto = new LoginResponseDto(token);
             return res.status(200).json(loginResponseDto);
         } catch (error) {
-            console.error(`error login: `, error);
+            if (error instanceof Error) logError(error, req);
             return res.status(500).json({ error: "로그인 중 오류가 발생했습니다." });
         }
     }
@@ -43,7 +45,7 @@ export default class UserController {
             await this.userService.logout(user_id);
             return res.status(200).json({ success: true });
         } catch (error) {
-            console.error(`error logout: `, error);
+            if (error instanceof Error) logError(error, req);
             return res.status(500).json({ error });
         }
     }
@@ -62,7 +64,7 @@ export default class UserController {
 
             return res.status(200).json(refreshResponseDto);
         } catch (error) {
-            console.error(`error refresh toekn: `, error);
+            if (error instanceof Error) logError(error, req);
             return res.status(401).json();
         }
     }
@@ -79,7 +81,7 @@ export default class UserController {
             await this.userService.setUserName(userProfileDto);
             return res.status(200).json({ success: true });
         } catch (error) {
-            console.error(`error patch user name: ${user_id}`, error);
+            if (error instanceof Error) logError(error, req);
             return res.status(500).json({ success: false, error: "Failed to update user name" });
         }
     }

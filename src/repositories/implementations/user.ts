@@ -11,8 +11,7 @@ export default class UserRepository implements IUserRepository {
                 where: { user_id },
             });
         } catch (error) {
-            console.error("Error in findUser:", error);
-            throw new Error("Failed to find user");
+            throw error;
         }
     }
 
@@ -27,8 +26,7 @@ export default class UserRepository implements IUserRepository {
                 transaction,
             });
         } catch (error) {
-            console.error("Error in findOrCreateUser:", error);
-            throw new Error("Failed to find or create user");
+            throw error;
         }
     }
 
@@ -46,8 +44,7 @@ export default class UserRepository implements IUserRepository {
             );
             return;
         } catch (error) {
-            console.error("Error in updateUserRefreshToken:", error);
-            throw new Error("Failed to update user refresh token");
+            throw error;
         }
     }
 
@@ -55,8 +52,7 @@ export default class UserRepository implements IUserRepository {
         try {
             return await UserProfile.create({ user_id, nickname }, { transaction });
         } catch (error) {
-            console.error("Error in createUserProfile:", error);
-            throw new Error("Failed to create user profile");
+            throw error;
         }
     }
 
@@ -65,8 +61,7 @@ export default class UserRepository implements IUserRepository {
             await User.update({ nickname }, { where: { user_id } });
             return;
         } catch (error) {
-            console.error("Error in updateUserProfile:", error);
-            throw new Error("Failed to update user profile");
+            throw error;
         }
     }
 }
