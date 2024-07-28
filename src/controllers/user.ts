@@ -5,7 +5,7 @@ import UserService from "../services/user";
 
 import logError from "../utils/error";
 
-import { LoginRequestDto, LoginResponseDto, RefreshRequestDto, RefreshResponsetDto, UserProfileDto } from "../dto/user";
+import { LoginRequestDto, RefreshRequestDto, UserProfileDto } from "../dto/user";
 
 export default class UserController {
     constructor(private userService: UserService) {}
@@ -24,12 +24,12 @@ export default class UserController {
 
         try {
             const loginRequestDto = new LoginRequestDto(code);
-            const token = await this.userService.loginOrSignUp(loginRequestDto);
-            const loginResponseDto = new LoginResponseDto(token);
+            const loginResponseDto = await this.userService.loginOrSignUp(loginRequestDto);
+
             return res.status(200).json(loginResponseDto);
         } catch (error) {
             if (error instanceof Error) logError(error, req);
-            return res.status(500).json({ error: "로그인 중 오류가 발생했습니다." });
+            return res.status(500).json({ message: "로그인 중 오류가 발생했습니다." });
         }
     }
 
@@ -46,7 +46,7 @@ export default class UserController {
             return res.status(200).json({ success: true });
         } catch (error) {
             if (error instanceof Error) logError(error, req);
-            return res.status(500).json({ error });
+            return res.status(500).json({ message: "로그아웃 오류" });
         }
     }
 
@@ -59,13 +59,12 @@ export default class UserController {
 
         try {
             const refreshRequestDto = new RefreshRequestDto({ access_token, refresh_token });
-            const new_access_token = await this.userService.refreshToken(refreshRequestDto);
-            const refreshResponseDto = new RefreshResponsetDto({ access_token: new_access_token, refresh_token: "" });
+            const refreshResponseDto = await this.userService.refreshToken(refreshRequestDto);
 
             return res.status(200).json(refreshResponseDto);
         } catch (error) {
             if (error instanceof Error) logError(error, req);
-            return res.status(401).json();
+            return res.status(401).json({ message: "토큰 재발급 오류" });
         }
     }
 
@@ -79,10 +78,11 @@ export default class UserController {
         try {
             const userProfileDto = new UserProfileDto(user_id, nickname);
             await this.userService.setUserName(userProfileDto);
+
             return res.status(200).json({ success: true });
         } catch (error) {
             if (error instanceof Error) logError(error, req);
-            return res.status(500).json({ success: false, error: "Failed to update user name" });
+            return res.status(500).json({ message: "이름 변경 오류" });
         }
     }
 

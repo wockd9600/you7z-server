@@ -38,6 +38,7 @@ export class UserProfileDto {
     user_id: number;
 
     @IsString()
+    @Length(1, 20)
     nickname: string;
 
     constructor(user_id: number, nickname: string) {

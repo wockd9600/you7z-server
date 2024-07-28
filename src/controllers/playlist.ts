@@ -3,6 +3,12 @@ import autobind from "autobind-decorator";
 
 import playlistService from "../services/playlist";
 
+import logError from "../utils/error";
+
+import * as dto from "../dto/playlist";
+import { validate } from "class-validator";
+import { plainToClass } from "class-transformer";
+
 export default class PlaylistController {
     constructor(private playlistService: playlistService) {}
 
@@ -12,16 +18,16 @@ export default class PlaylistController {
         // page에 해당하는 인기 노래모음을 가져옴 (db에서 is_delete = 0은 가져오지 않음.)
         // 전달
 
+        const { page } = req.body;
+
         try {
-            const page = req.body.page;
-            const playlists = await this.playlistService.getPopularPlaylists(page);
-            res.status(200).json(playlists);
+            const popularRequestDto = new dto.PopularRequestDto(page);
+            const popularResponseDto = await this.playlistService.getPopularPlaylists(popularRequestDto);
+
+            res.status(200).json(popularResponseDto);
         } catch (error) {
-            if (error instanceof Error) {
-                res.status(500).json({ error: error.message });
-            } else {
-                res.status(500).json({ message: "Unknown error" });
-            }
+            if (error instanceof Error) logError(error, req);
+            return res.status(500).json({ message: "플레이 리스트를 가져올 수 없습니다." });
         }
     }
 
@@ -32,16 +38,15 @@ export default class PlaylistController {
         // 해당하는 노래가 있으면 전달
 
         try {
-            const search_term = req.body.search_term;
+            const { page, search_term } = req.body;
 
-            const playlists = await this.playlistService.searchPlaylists(search_term);
-            res.status(200).json(playlists);
+            const searchRequestDto = new dto.SearchRequestDto(page, search_term);
+            const searchResponseDto = await this.playlistService.searchPlaylists(searchRequestDto);
+
+            res.status(200).json(searchResponseDto);
         } catch (error) {
-            if (error instanceof Error) {
-                res.status(500).json({ error: error.message });
-            } else {
-                res.status(500).json({ message: "Unknown error" });
-            }
+            if (error instanceof Error) logError(error, req);
+            return res.status(500).json({ message: "검색할 수 없습니다." });
         }
     }
 
@@ -52,15 +57,15 @@ export default class PlaylistController {
 
         try {
             const user_id = req.user!.user_id;
-            const playlist_id = req.body.playlist_id;
-            const result = await this.playlistService.storePlaylist(user_id, playlist_id);
-            res.status(201).json(result);
+            const { id } = req.body;
+
+            const storeRequestDto = new dto.StoreRequestDto(id);
+            const storeResponseDto = await this.playlistService.storePlaylist(storeRequestDto, user_id);
+
+            res.status(201).json(storeResponseDto);
         } catch (error) {
-            if (error instanceof Error) {
-                res.status(500).json({ error: error.message });
-            } else {
-                res.status(500).json({ message: "Unknown error" });
-            }
+            if (error instanceof Error) logError(error, req);
+            return res.status(500).json({ message: "저장할 수 없는 플레이 리스트입니다." });
         }
     }
 
@@ -73,16 +78,18 @@ export default class PlaylistController {
 
         try {
             const user_id = req.user!.user_id;
-            const playlist = req.body.playlist;
-            const songs = req.body.songs;
-            const result = await this.playlistService.createPlaylist(user_id, playlist, songs);
-            res.status(201).json(result);
+            const { playlist, songs } = req.body;
+
+            const createRequestDto = plainToClass(dto.CreateRequestDto, { playlist, songs });
+            const errors = await validate(createRequestDto);
+            if (errors.length > 0) throw errors
+
+            const createResponseDto = await this.playlistService.createPlaylist(createRequestDto, user_id);
+
+            res.status(201).json(createResponseDto);
         } catch (error) {
-            if (error instanceof Error) {
-                res.status(500).json({ error: error.message });
-            } else {
-                res.status(500).json({ message: "Unknown error" });
-            }
+            if (error instanceof Error) logError(error, req);
+            return res.status(500).json({ message: "플레이 리스트를 생성 오류입니다." });
         }
     }
 
@@ -100,15 +107,15 @@ export default class PlaylistController {
 
         try {
             const user_id = req.user!.user_id;
-            const playlist_id = req.body.playlist_id;
-            const result = await this.playlistService.deletePlaylist(user_id, playlist_id);
-            res.status(200).json({ message: "Playlist marked as deleted" });
+            const { id } = req.body;
+
+            const deleteRequestDto = new dto.DeleteRequestDto(id);
+            const deleteResponseDto = await this.playlistService.deletePlaylist(deleteRequestDto, user_id);
+
+            res.status(200).json(deleteResponseDto);
         } catch (error) {
-            if (error instanceof Error) {
-                res.status(500).json({ error: error.message });
-            } else {
-                res.status(500).json({ message: "Unknown error" });
-            }
+            if (error instanceof Error) logError(error, req);
+            return res.status(500).json({ message: "플레이 리스트를 삭제할 수 없습니다" });
         }
     }
 
@@ -119,15 +126,15 @@ export default class PlaylistController {
 
         try {
             const user_id = req.user!.user_id;
-            const playlist_id = req.body.playlist_id;
-            const result = await this.playlistService.removeStoredPlaylist(user_id, playlist_id);
-            res.status(200).json({ message: "Stored playlist removed" });
+            const { id } = req.body;
+
+            const deleteStoreRequestDto = new dto.DeleteStoreRequestDto(id);
+            const deleteStoreResponseDto = await this.playlistService.removeStoredPlaylist(deleteStoreRequestDto, user_id);
+
+            res.status(200).json(deleteStoreResponseDto);
         } catch (error) {
-            if (error instanceof Error) {
-                res.status(500).json({ error: error.message });
-            } else {
-                res.status(500).json({ message: "Unknown error" });
-            }
+            if (error instanceof Error) logError(error, req);
+            return res.status(500).json({ message: "플레이 리스트를 삭제할 수 없습니다." });
         }
     }
 

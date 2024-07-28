@@ -8,13 +8,12 @@ import { sequelize } from "../modules/sequelize";
 import jwt from "../modules/jwt";
 import { encrypt } from "../utils/security";
 
+import { LoginRequestDto, LoginResponseDto, RefreshRequestDto, RefreshResponsetDto, UserProfileDto } from "../dto/user";
+
 // type
 import { JwtPayload } from "jsonwebtoken";
 import IUserRepository from "../repositories/interfaces/user";
-
 import User from "../models/User";
-
-import { LoginRequestDto, RefreshRequestDto, UserProfileDto } from "../dto/user";
 import UserProfile from "../models/UserProfile";
 
 export default class UserService {
@@ -104,7 +103,8 @@ export default class UserService {
 
             await transaction.commit();
 
-            return { access_token, refresh_token: userData.refresh_token };
+            const loginResponseDto = new LoginResponseDto({ access_token, refresh_token: userData.refresh_token });
+            return loginResponseDto;
         } catch (error) {
             await transaction.rollback();
             console.error("Error during login or sign-up:", error);
@@ -138,7 +138,9 @@ export default class UserService {
             if (refresh_token !== db_refresh_token) throw new Error("리프레시 토큰 불일치");
 
             const newAccessToken = await jwt.sign(user);
-            return newAccessToken;
+            
+            const refreshResponseDto = new RefreshResponsetDto({ access_token: newAccessToken, refresh_token: "" });
+            return refreshResponseDto;
         } catch (error) {
             throw error;
         }

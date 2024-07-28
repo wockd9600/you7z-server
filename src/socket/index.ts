@@ -1,5 +1,5 @@
 import http from "http";
-import express, { Application } from "express";
+import { Application } from "express";
 import { Server } from "socket.io";
 
 export default function initializeSocket(app: Application): http.Server {
@@ -16,7 +16,7 @@ export default function initializeSocket(app: Application): http.Server {
     });
 
     const ns = io.of("/");
-    import("./ns.js")
+    import("./ns")
         .then((socketHandler) => {
             socketHandler.default(ns);
         })
