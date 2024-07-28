@@ -2,7 +2,7 @@ import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../modules/sequelize";
 import User from "./User"; // Assuming you have a User model
 
-class PlayList extends Model {
+class Playlist extends Model {
     public playlist_id!: number;
     public user_id!: number;
     public title!: string;
@@ -13,7 +13,7 @@ class PlayList extends Model {
     public created_at!: Date;
 }
 
-PlayList.init(
+Playlist.init(
     {
         playlist_id: {
             type: DataTypes.INTEGER,
@@ -46,11 +46,13 @@ PlayList.init(
         },
         download_count: {
             type: DataTypes.TINYINT,
-            allowNull: true,
+            defaultValue: 0,
+            allowNull: false,
         },
         status: {
             type: DataTypes.TINYINT,
-            allowNull: true,
+            defaultValue: 0,
+            allowNull: false,
             validate: {
                 isIn: [[0, 1]],
             }
@@ -71,6 +73,6 @@ PlayList.init(
     }
 );
 
-PlayList.belongsTo(User, { foreignKey: "user_id" });
+Playlist.belongsTo(User, { foreignKey: "user_id" });
 
-export default PlayList;
+export default Playlist;

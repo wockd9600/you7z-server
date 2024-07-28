@@ -34,7 +34,7 @@ User.init(
         status: {
             type: DataTypes.TINYINT,
             allowNull: false,
-            defaultValue: 1,
+            defaultValue: 0,
             validate: {
                 isIn: [[0, 1]], // Only allows values 0 and 1
             },

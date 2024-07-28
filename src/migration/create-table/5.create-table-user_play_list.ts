@@ -1,9 +1,9 @@
-import UserPlayList from "../../models/UserPlayList";
+import UserPlaylist from "../../models/UserPlaylist";
 
 console.log("======Create User Table======");
 
 const create_table_user_playlist = async () => {
-    await UserPlayList.sync({ force: true })
+    await UserPlaylist.sync({ force: true })
         .then(() => {
             console.log("Success Create User Table");
         })

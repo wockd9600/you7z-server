@@ -1,6 +1,6 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../modules/sequelize";
-import PlayList from "./PlayList"; // Assuming you have a Playlist model
+import PlayList from "./Playlist"; // Assuming you have a Playlist model
 
 class Song extends Model {
     public song_id!: number;

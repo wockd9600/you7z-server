@@ -11,7 +11,7 @@ export default class PlaylistController {
     @autobind
     async getPopularPlayList(req: Request, res: Response) {
         // page를 전달 받음.
-        // page에 해당하는 인기 노래모음을 가져옴 (db에서 is_delete = 0은 가져오지 않음.)
+        // page에 해당하는 인기 노래모음을 가져옴 (db에서 is_delete = 1은 가져오지 않음.)
         // 전달
 
         try {

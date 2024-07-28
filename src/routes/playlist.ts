@@ -1,8 +1,8 @@
 import { Router } from "express";
 
-import PlayListService from "../services/playlist";
-import PlayListRepository from "../repositories/implementations/playlist";
-import PlayListController from "../controllers/playlist";
+import PlaylistService from "../services/playlist";
+import PlaylistRepository from "../repositories/implementations/playlist";
+import PlaylistController from "../controllers/playlist";
 
 import { isLoggedIn } from "../middlewares/auth";
 import { validateBody } from "../middlewares/validator";
@@ -10,24 +10,24 @@ import { validateBody } from "../middlewares/validator";
 import { PopularRequestDto, SearchRequestDto, StoreRequestDto, CreateRequestDto, DeleteRequestDto, DeleteStoreRequestDto } from "../dto/playlist"
 
 const router = Router();
-const repository = new PlayListRepository();
-const service = new PlayListService(repository);
-const controller = new PlayListController(service);
+const repository = new PlaylistRepository();
+const service = new PlaylistService(repository);
+const controller = new PlaylistController(service);
 
 /* GET */
-router.get("/popular", isLoggedIn, validateBody(PopularRequestDto), controller.getPopularPlayList);
-router.get("/search", isLoggedIn, validateBody(SearchRequestDto), controller.getSearchPlayList);
+router.get("/popular", isLoggedIn, validateBody(PopularRequestDto), controller.getPopularPlaylist);
+router.get("/search", isLoggedIn, validateBody(SearchRequestDto), controller.getSearchPlaylist);
 
 /* POST */
-router.post("/store", isLoggedIn, validateBody(StoreRequestDto), controller.postStorePlayList);
-router.post("/create", isLoggedIn, validateBody(CreateRequestDto), controller.postCreatePlayList);
+router.post("/store", isLoggedIn, validateBody(StoreRequestDto), controller.postStorePlaylist);
+router.post("/create", isLoggedIn, validateBody(CreateRequestDto), controller.postCreatePlaylist);
 // router.post("/song/add", controller.postAddSong);
 
 /* PATCH */
 // router.patch("/song/delete", controller.patchDeleteSong);
-router.patch("/delete", isLoggedIn, validateBody(DeleteRequestDto), controller.patchDeletePlayList);
+router.patch("/delete", isLoggedIn, validateBody(DeleteRequestDto), controller.patchDeletePlaylist);
 
 /* DELETE */
-router.delete("/store", isLoggedIn, validateBody(DeleteStoreRequestDto), controller.deleteStorePlayList);
+router.delete("/store", isLoggedIn, validateBody(DeleteStoreRequestDto), controller.deleteStorePlaylist);
 
 export default router;

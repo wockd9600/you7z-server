@@ -4,23 +4,33 @@ import { sequelize } from "../modules/sequelize";
 import * as dto from "../dto/playlist";
 
 // type
-import IPlayListRepository from "../repositories/interfaces/playlist";
-import PlayList from "../models/PlayList";
-import UserPlayList from "../models/UserPlayList";
+import IPlaylistRepository from "../repositories/interfaces/playlist";
+import Playlist from "../models/Playlist";
+import UserPlaylist from "../models/UserPlaylist";
 import Song from "../models/Song";
 
 import { PopularRequestDto, SearchRequestDto, StoreRequestDto, CreateRequestDto, DeleteRequestDto, DeleteStoreRequestDto } from "../dto/playlist";
 
-export default class PlayListController {
-    constructor(private playlistRepository: IPlayListRepository) {}
+export default class PlaylistController {
+    constructor(private playlistRepository: IPlaylistRepository) {}
+
+    getOffsetAndLimit(page: number) {
+        const per = 8;
+
+        const offset = (page - 1) * per;
+        const limit = per;
+
+        return { offset, limit };
+    }
 
     @autobind
     async getPopularPlaylists(popularRequestDto: PopularRequestDto) {
         const { page } = popularRequestDto;
-        const per = 8;
 
         try {
-            const playlists = await this.playlistRepository.getPopularPlaylists(page, per);
+            const { limit, offset } = this.getOffsetAndLimit(page);
+
+            const playlists = await this.playlistRepository.getPopularPlaylists(limit, offset);
             if (playlists.length === 0) return [];
 
             const popularResponseDto = new dto.PopularResponseDto(playlists);
@@ -35,7 +45,9 @@ export default class PlayListController {
         const { page, search_term } = searchRequestDto;
 
         try {
-            const playlists = await this.playlistRepository.getSearchPlaylists(page, search_term);
+            const { limit, offset } = this.getOffsetAndLimit(page);
+
+            const playlists = await this.playlistRepository.getSearchPlaylists(limit, offset, search_term);
             if (playlists.length === 0) return [];
 
             const searchResponseDto = new dto.SearchResponseDto(playlists);
@@ -50,14 +62,15 @@ export default class PlayListController {
         const { id } = storeRequestDto;
 
         try {
-            const userPlayListData = new UserPlayList({
+            const userPlaylistData = new UserPlaylist({
                 playlist_id: id,
                 user_id,
             });
-            const user_playlist = await this.playlistRepository.findOneUserPlayList(userPlayListData);
+
+            const user_playlist = await this.playlistRepository.findOneUserPlaylist(userPlaylistData);
             if (user_playlist !== null) throw new Error("이미 저장한 플레이 리스트입니다.");
 
-            await this.playlistRepository.createUserPlayList(userPlayListData);
+            await this.playlistRepository.createUserPlaylist(userPlaylistData);
 
             const storeResponseDto = new dto.StoreResponseDto(true);
             return storeResponseDto;
@@ -73,10 +86,16 @@ export default class PlayListController {
         const transaction = await sequelize.transaction();
 
         try {
-            const userPlayListData = new PlayList({ ...playlist, user_id });
-            const user_playlist = await this.playlistRepository.createPlayList(userPlayListData, transaction);
+            const length = songs.length;
 
-            const songEntities = songs.map((song) => new Song({ ...song, playlist_id: user_playlist.isSoftDeleted }));
+            const userPlaylistData = new Playlist({ ...playlist, user_id, length });
+            const user_playlist = await this.playlistRepository.createPlaylist(userPlaylistData, transaction);
+
+            const songEntities = songs.map((song) => ({
+                ...song,
+                playlist_id: user_playlist.playlist_id,
+            }));
+
             await this.playlistRepository.bulkCreateSong(songEntities, transaction);
 
             const createResponseDto = new dto.CreateResponseDto(true);
@@ -94,8 +113,8 @@ export default class PlayListController {
         const { id } = deleteRequestDto;
 
         try {
-            const playListData = new PlayList({ playlist_id: id, user_id });
-            await this.playlistRepository.updatePlayList(playListData);
+            const playlistData = new Playlist({ playlist_id: id, user_id });
+            await this.playlistRepository.updatePlaylist(playlistData);
 
             const deleteResponseDto = new dto.DeleteResponseDto(true);
             return deleteResponseDto;
@@ -109,8 +128,8 @@ export default class PlayListController {
         const { id } = deleteStoreRequestDto;
 
         try {
-            const userPlayListData = new UserPlayList({ playlist_id: id, user_id });
-            await this.playlistRepository.deleteUserPlayList(userPlayListData);
+            const userPlaylistData = new UserPlaylist({ playlist_id: id, user_id });
+            await this.playlistRepository.deleteUserPlaylist(userPlaylistData);
 
             const deleteStoreResponseDto = new dto.DeleteStoreResponseDto(true);
             return deleteStoreResponseDto;

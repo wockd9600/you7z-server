@@ -1,4 +1,4 @@
-import PlayList from "../../models/PlayList";
+import PlayList from "../../models/Playlist";
 
 console.log("======Create User Table======");
 
