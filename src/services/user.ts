@@ -8,7 +8,7 @@ import { sequelize } from "../modules/sequelize";
 import jwt from "../modules/jwt";
 import { encrypt } from "../utils/security";
 
-import { LoginRequestDto, LoginResponseDto, RefreshRequestDto, RefreshResponsetDto, UserProfileDto } from "../dto/user";
+import { LoginRequestDto, LoginResponseDto, RefreshRequestDto, RefreshResponsetDto, UpdateNameDto } from "../dto/user";
 
 // type
 import { JwtPayload } from "jsonwebtoken";
@@ -123,8 +123,8 @@ export default class UserService {
     }
 
     @autobind
-    async refreshToken(refreshDto: RefreshRequestDto) {
-        const { access_token, refresh_token } = refreshDto;
+    async refreshToken(refreshDto: RefreshRequestDto, access_token: string) {
+        const { refresh_token } = refreshDto;
 
         try {
             const toekn_user = (await jwt.decode(access_token)) as JwtPayload;
@@ -138,7 +138,7 @@ export default class UserService {
             if (refresh_token !== db_refresh_token) throw new Error("리프레시 토큰 불일치");
 
             const newAccessToken = await jwt.sign(user);
-            
+
             const refreshResponseDto = new RefreshResponsetDto({ access_token: newAccessToken, refresh_token: "" });
             return refreshResponseDto;
         } catch (error) {
@@ -147,8 +147,8 @@ export default class UserService {
     }
 
     @autobind
-    async setUserName(userProfileDto: UserProfileDto) {
-        const { user_id, nickname } = userProfileDto;
+    async setUserName(userProfileDto: UpdateNameDto, user_id: number) {
+        const { nickname } = userProfileDto;
 
         try {
             const userProfileData = new UserProfile({ user_id, nickname });

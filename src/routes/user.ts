@@ -5,20 +5,24 @@ import UserRepository from "../repositories/implementations/user";
 import UserController from "../controllers/user";
 
 import { isLoggedIn } from '../middlewares/auth';
+import { validateBody } from "../middlewares/validator";
+
+import { LoginRequestDto, RefreshRequestDto, UpdateNameDto } from "../dto/user";
+
 
 const router = Router();
-const userRepository = new UserRepository(); // 리포지토리 인스턴스 생성
-const service = new UserService(userRepository);
+const repository = new UserRepository(); // 리포지토리 인스턴스 생성
+const service = new UserService(repository);
 const controller = new UserController(service);
 
 /* GET */
 
 /* POST */
-router.post("/login", controller.login);
+router.post("/login", validateBody(LoginRequestDto), controller.login);
 router.post("/logout", isLoggedIn, controller.logout);
-router.post("/refresh", controller.refresh);
+router.post("/refresh", validateBody(RefreshRequestDto), controller.refresh);
 
 /* PATCH */
-router.patch("/name", isLoggedIn, controller.patchUserName);
+router.patch("/name", isLoggedIn, validateBody(UpdateNameDto), controller.patchUserName);
 
 export default router;

@@ -5,8 +5,6 @@ import UserService from "../services/user";
 
 import logError from "../utils/error";
 
-import { LoginRequestDto, RefreshRequestDto, UserProfileDto } from "../dto/user";
-
 export default class UserController {
     constructor(private userService: UserService) {}
 
@@ -23,7 +21,7 @@ export default class UserController {
         // if (!code) return res.status(400).json({ error: "Kakao 인증 코드가 필요합니다." });
 
         try {
-            const loginRequestDto = new LoginRequestDto(code);
+            const loginRequestDto = req.dto;
             const loginResponseDto = await this.userService.loginOrSignUp(loginRequestDto);
 
             return res.status(200).json(loginResponseDto);
@@ -55,11 +53,10 @@ export default class UserController {
         // 전달된 토큰에서 id를 추출
         // 토큰 재발급 로직
         const access_token = (req.headers as { access_token: string }).access_token;
-        const { refresh_token } = req.body;
 
         try {
-            const refreshRequestDto = new RefreshRequestDto({ access_token, refresh_token });
-            const refreshResponseDto = await this.userService.refreshToken(refreshRequestDto);
+            const refreshRequestDto = req.dto;
+            const refreshResponseDto = await this.userService.refreshToken(refreshRequestDto, access_token);
 
             return res.status(200).json(refreshResponseDto);
         } catch (error) {
@@ -73,11 +70,10 @@ export default class UserController {
         // 전달된 토큰에서 id를 추출
         // 전달된 텍스트 데이터로 이름 변경
         const user_id = req.user!.user_id;
-        const nickname = req.body.nickname;
 
         try {
-            const userProfileDto = new UserProfileDto(user_id, nickname);
-            await this.userService.setUserName(userProfileDto);
+            const userProfileDto = req.dto;
+            await this.userService.setUserName(userProfileDto, user_id);
 
             return res.status(200).json({ success: true });
         } catch (error) {

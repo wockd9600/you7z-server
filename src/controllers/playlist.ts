@@ -5,10 +5,6 @@ import playlistService from "../services/playlist";
 
 import logError from "../utils/error";
 
-import * as dto from "../dto/playlist";
-import { validate } from "class-validator";
-import { plainToClass } from "class-transformer";
-
 export default class PlaylistController {
     constructor(private playlistService: playlistService) {}
 
@@ -18,10 +14,8 @@ export default class PlaylistController {
         // page에 해당하는 인기 노래모음을 가져옴 (db에서 is_delete = 0은 가져오지 않음.)
         // 전달
 
-        const { page } = req.body;
-
         try {
-            const popularRequestDto = new dto.PopularRequestDto(page);
+            const popularRequestDto = req.dto;
             const popularResponseDto = await this.playlistService.getPopularPlaylists(popularRequestDto);
 
             res.status(200).json(popularResponseDto);
@@ -38,9 +32,7 @@ export default class PlaylistController {
         // 해당하는 노래가 있으면 전달
 
         try {
-            const { page, search_term } = req.body;
-
-            const searchRequestDto = new dto.SearchRequestDto(page, search_term);
+            const searchRequestDto = req.dto;
             const searchResponseDto = await this.playlistService.searchPlaylists(searchRequestDto);
 
             res.status(200).json(searchResponseDto);
@@ -59,7 +51,7 @@ export default class PlaylistController {
             const user_id = req.user!.user_id;
             const { id } = req.body;
 
-            const storeRequestDto = new dto.StoreRequestDto(id);
+            const storeRequestDto = req.dto;
             const storeResponseDto = await this.playlistService.storePlaylist(storeRequestDto, user_id);
 
             res.status(201).json(storeResponseDto);
@@ -78,12 +70,8 @@ export default class PlaylistController {
 
         try {
             const user_id = req.user!.user_id;
-            const { playlist, songs } = req.body;
 
-            const createRequestDto = plainToClass(dto.CreateRequestDto, { playlist, songs });
-            const errors = await validate(createRequestDto);
-            if (errors.length > 0) throw errors
-
+            const createRequestDto = req.dto;
             const createResponseDto = await this.playlistService.createPlaylist(createRequestDto, user_id);
 
             res.status(201).json(createResponseDto);
@@ -107,9 +95,8 @@ export default class PlaylistController {
 
         try {
             const user_id = req.user!.user_id;
-            const { id } = req.body;
 
-            const deleteRequestDto = new dto.DeleteRequestDto(id);
+            const deleteRequestDto = req.dto;
             const deleteResponseDto = await this.playlistService.deletePlaylist(deleteRequestDto, user_id);
 
             res.status(200).json(deleteResponseDto);
@@ -126,9 +113,8 @@ export default class PlaylistController {
 
         try {
             const user_id = req.user!.user_id;
-            const { id } = req.body;
 
-            const deleteStoreRequestDto = new dto.DeleteStoreRequestDto(id);
+            const deleteStoreRequestDto = req.dto;
             const deleteStoreResponseDto = await this.playlistService.removeStoredPlaylist(deleteStoreRequestDto, user_id);
 
             res.status(200).json(deleteStoreResponseDto);

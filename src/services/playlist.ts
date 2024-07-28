@@ -8,6 +8,7 @@ import IPlayListRepository from "../repositories/interfaces/playlist";
 import PlayList from "../models/PlayList";
 import UserPlayList from "../models/UserPlayList";
 import Song from "../models/Song";
+
 import { PopularRequestDto, SearchRequestDto, StoreRequestDto, CreateRequestDto, DeleteRequestDto, DeleteStoreRequestDto } from "../dto/playlist";
 
 export default class PlayListController {
@@ -29,6 +30,7 @@ export default class PlayListController {
         }
     }
 
+    @autobind
     async searchPlaylists(searchRequestDto: SearchRequestDto) {
         const { page, search_term } = searchRequestDto;
 
@@ -43,6 +45,7 @@ export default class PlayListController {
         }
     }
 
+    @autobind
     async storePlaylist(storeRequestDto: StoreRequestDto, user_id: number) {
         const { id } = storeRequestDto;
 
@@ -63,6 +66,7 @@ export default class PlayListController {
         }
     }
 
+    @autobind
     async createPlaylist(createRequestDto: CreateRequestDto, user_id: number) {
         const { playlist, songs } = createRequestDto;
 
@@ -85,6 +89,7 @@ export default class PlayListController {
         }
     }
 
+    @autobind
     async deletePlaylist(deleteRequestDto: DeleteRequestDto, user_id: number) {
         const { id } = deleteRequestDto;
 
@@ -99,6 +104,7 @@ export default class PlayListController {
         }
     }
 
+    @autobind
     async removeStoredPlaylist(deleteStoreRequestDto: DeleteStoreRequestDto, user_id: number) {
         const { id } = deleteStoreRequestDto;
 

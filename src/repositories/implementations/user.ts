@@ -1,8 +1,9 @@
 // type
 import { Transaction } from "sequelize";
+import IUserRepository from "../interfaces/user";
+
 import User from "../../models/User";
 import UserProfile from "../../models/UserProfile";
-import IUserRepository from "../interfaces/user";
 
 export default class UserRepository implements IUserRepository {
     async findOneUser({ user_id }: User) {
