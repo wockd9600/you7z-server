@@ -55,7 +55,7 @@ Playlist.init(
             allowNull: false,
             validate: {
                 isIn: [[0, 1]],
-            }
+            },
         },
         created_at: {
             type: DataTypes.DATE,

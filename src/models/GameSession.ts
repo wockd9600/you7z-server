@@ -9,6 +9,7 @@ class GameSession extends Model {
     public playlist_id!: number;
     public game_type!: number;
     public goal_score!: number;
+    public status!: number;
     public created_at!: Date;
 }
 
@@ -50,6 +51,14 @@ GameSession.init(
                 min: 5,
             },
             defaultValue: 10,
+        },
+        status: {
+            type: DataTypes.TINYINT,
+            allowNull: false,
+            defaultValue: 0,
+            validate: {
+                isIn: [[0, 1]], // Only allows values 0 and 1
+            },
         },
         created_at: {
             type: DataTypes.DATE,

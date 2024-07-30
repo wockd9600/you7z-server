@@ -7,7 +7,6 @@ import * as dto from "../dto/playlist";
 import IPlaylistRepository from "../repositories/interfaces/playlist";
 import Playlist from "../models/Playlist";
 import UserPlaylist from "../models/UserPlaylist";
-import Song from "../models/Song";
 
 import { PopularRequestDto, SearchRequestDto, StoreRequestDto, CreateRequestDto, DeleteRequestDto, DeleteStoreRequestDto } from "../dto/playlist";
 
