@@ -11,6 +11,7 @@ export default class PlaylistRepository implements IPlaylistRepository {
     async getPopularPlaylists(limit: number, offset: number) {
         try {
             return await Playlist.findAll({
+                where: { status: 0 },
                 order: [["download_cnt", "DESC"]],
                 limit,
                 offset,
@@ -24,14 +25,7 @@ export default class PlaylistRepository implements IPlaylistRepository {
         try {
             return await Playlist.findAll({
                 where: {
-                    [Op.or]: [
-                        {
-                            title: { [Op.like]: `%${search_term}%` },
-                        },
-                        {
-                            description: { [Op.like]: `%${search_term}%` },
-                        },
-                    ],
+                    [Op.or]: [{ title: { [Op.like]: `%${search_term}%` } }, { description: { [Op.like]: `%${search_term}%` } }, { status: 0 }],
                 },
                 order: [["download_cnt", "DESC"]],
                 limit,

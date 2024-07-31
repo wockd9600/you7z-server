@@ -16,7 +16,8 @@ export default class GameRepository implements IGameRepository {
 
         try {
             return await GameRoom.findOne({
-                where: { room_code },
+                where: { room_code, status: 0 },
+                order: [["createdAt", "DESC"]],
             });
         } catch (error) {
             throw error;
@@ -29,6 +30,7 @@ export default class GameRepository implements IGameRepository {
         try {
             return await GameSession.findOne({
                 where: { [Op.or]: [{ room_id }, { session_id }] },
+                order: [["createdAt", "DESC"]],
             });
         } catch (error) {
             throw error;

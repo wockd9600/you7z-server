@@ -10,11 +10,28 @@ class UserNicknameAndScore {
     order: number;
     score: number;
 
-    constructor(id: number, nickname: string, order:number, score: number) {
+    constructor(id: number, nickname: string, order: number, score: number) {
         this.id = id;
-        this.order = order
+        this.order = order;
         this.nickname = nickname;
         this.score = score;
+    }
+}
+
+class RoomInfo {
+    @IsNotEmpty()
+    public gameSetting: GameSettingDto;
+
+    @IsNotEmpty()
+    public gameUsers: UserNicknameAndScore[];
+
+    @IsOptional()
+    public song: Song | null;
+
+    constructor(gameSetting: GameSettingDto, gameUsers: UserNicknameAndScore[], song: Song | null) {
+        this.gameSetting = gameSetting;
+        this.gameUsers = gameUsers;
+        this.song = song;
     }
 }
 
@@ -41,19 +58,5 @@ export class RoomInfoRequestDto {
     }
 }
 
-export class RoomInfoResponseDto {
-    @IsNotEmpty()
-    public gameSetting: GameSettingDto;
-
-    @IsNotEmpty()
-    public gameUsers: UserNicknameAndScore[];
-
-    @IsOptional()
-    public song: Song | null;
-
-    constructor(gameSetting: GameSettingDto, gameUsers: UserNicknameAndScore[], song: Song | null) {
-        this.gameSetting = gameSetting;
-        this.gameUsers = gameUsers;
-        this.song = song;
-    }
-}
+export class RoomInfoResponseDto extends RoomInfo {}
+export class CreateRoomResponseDto extends RoomInfo {}

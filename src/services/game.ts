@@ -13,7 +13,7 @@ import { RoomInfoRequestDto } from "../dto/game";
 import GameSession from "../models/GameSession";
 import Playlist from "../models/Playlist";
 import UserPlaylist from "../models/UserPlaylist";
-import { fetchGameRoomUsersData } from "../helper/game";
+import { fetchGameRoomUsersData, createUniqueRoomCode } from "../helper/game";
 
 enum GAME_STATUS {
     NOT_STARTED = 0,
@@ -127,7 +127,8 @@ export default class GameService {
             }
 
             // create room, gamesession 생성
-            const room_code = "asdfsd";
+            const room_code = await createUniqueRoomCode(this.gameRepository);
+
             const gameRoomData = new GameRoom({ room_code });
             const gameRoom = await this.gameRepository.createGameRoom(gameRoomData, transaction);
             if (gameRoom === null) throw new Error("방 정보를 찾을 수 없습니다. (GameRoom 생성 실패)");
@@ -155,10 +156,10 @@ export default class GameService {
 
             // 게임 설정, 입장한 유저들 정보를 클라이언트에 전달
             const gameSettingDto = new dto.GameSettingDto(gameSession, gamePlaylist);
-            const roomInfoResponseDto = new dto.RoomInfoResponseDto(gameSettingDto, gameRoomUsersData, null);
+            const createRoomResponseDto = new dto.CreateRoomResponseDto(gameSettingDto, gameRoomUsersData, null);
 
             await transaction.commit();
-            return { success: true, roomInfoResponseDto };
+            return { success: true, createRoomResponseDto };
         } catch (error) {
             await transaction.rollback();
             throw error;

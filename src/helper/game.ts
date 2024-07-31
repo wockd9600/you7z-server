@@ -1,6 +1,19 @@
 import IGameRepository from "../repositories/interfaces/game";
 import { RedisUtil } from "../utils/redis";
 
+import GameRoom from "../models/GameRoom";
+
+function generateRoomCode() {
+    const length = 6;
+    const characters = "0123456789";
+    let result = "";
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        result += characters.charAt(randomIndex);
+    }
+    return result;
+}
+
 export function mergeUserDetails(names: { user_id: number; nickname: string }[], scores: { user_id: number; score: number }[], orders: { user_id: number; order: number }[]) {
     const nameDict: { [key: number]: string } = names.reduce((acc, item) => {
         acc[item.user_id] = item.nickname;
@@ -44,4 +57,20 @@ export async function fetchGameRoomUsersData(gameRepository: IGameRepository, re
     } catch (error) {
         throw error;
     }
+}
+
+export async function createUniqueRoomCode(gameRepository: IGameRepository) {
+    let isUnique = false;
+    let room_code;
+
+    while (!isUnique) {
+        room_code = generateRoomCode();
+        const gameRoomData = new GameRoom({ room_code });
+        const existingRoom = await gameRepository.findOneGameRoom(gameRoomData);
+        if (!existingRoom) {
+            isUnique = true;
+        }
+    }
+
+    return room_code;
 }
