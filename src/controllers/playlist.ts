@@ -89,8 +89,6 @@ export default class PlaylistController {
     @autobind
     async patchDeletePlaylist(req: Request, res: Response) {
         // user id, playlist id를 전달 받음.
-        // playlist가 user가 만든건지 확인함.
-        // playlist의 is_delete = 1로 변경
 
         try {
             const user_id = req.user!.user_id;

@@ -69,12 +69,13 @@ export default class UserService {
 
         const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
         const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-        return `${randomAdjective} ${randomNoun}}`;
+        return `${randomAdjective} ${randomNoun}`;
     }
 
     @autobind
     async loginOrSignUp(loginDto: LoginRequestDto) {
         const { code } = loginDto;
+
         const transaction = await sequelize.transaction();
 
         try {
@@ -82,7 +83,7 @@ export default class UserService {
             if (kakao_user.err) throw new Error(kakao_user.err);
 
             const userData = new User({
-                kakao_id: kakao_user.id,
+                kakao_id: 12345,
                 refresh_token: encrypt().toString(),
             });
 
@@ -101,9 +102,12 @@ export default class UserService {
 
             const access_token = await jwt.sign({ user_id: user.user_id });
 
+            const loginResponseDto = new LoginResponseDto();
+            loginResponseDto.access_token = access_token;
+            loginResponseDto.refresh_token = userData.refresh_token;
+
             await transaction.commit();
 
-            const loginResponseDto = new LoginResponseDto({ access_token, refresh_token: userData.refresh_token });
             return loginResponseDto;
         } catch (error) {
             await transaction.rollback();
@@ -139,7 +143,9 @@ export default class UserService {
 
             const newAccessToken = await jwt.sign(user);
 
-            const refreshResponseDto = new RefreshResponsetDto({ access_token: newAccessToken, refresh_token: "" });
+            const refreshResponseDto = new RefreshResponsetDto();
+            refreshResponseDto.access_token = newAccessToken;
+            
             return refreshResponseDto;
         } catch (error) {
             throw error;

@@ -6,7 +6,7 @@ const { combine, timestamp, printf, colorize } = winston.format;
 const logDir = "logs"; // logs 디렉토리 하위에 로그 파일 저장
 
 const logFormat = printf((info) => {
-    return `${info.timestamp} ${info.level}: ${info.message}`;
+    return `${info.timestamp} ${info.level}: ${info.clientIp || ""}(${info.user_id || -1})${ + info.method || ""}${info.url || ""}${info.stack || ""} ${info.message || ""}`;
 });
 /*
  * Log Level
@@ -49,6 +49,7 @@ const logger = winston.createLogger({
             maxSize: "20m",
             maxFiles: 30,
             zippedArchive: true,
+            format: winston.format.json(),
         }),
     ],
 });
@@ -72,6 +73,5 @@ logger.add(
     })
 );
 // }
-
 
 export default logger;

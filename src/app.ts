@@ -1,6 +1,7 @@
 import "dotenv/config";
 import cors from "cors";
 import express, { Request, Response, NextFunction } from "express";
+import "reflect-metadata";
 
 // import { sequelize } from "./modules/sequelize";
 // import RedisStore from "connect-redis"
@@ -10,6 +11,11 @@ import morganMiddleware from "./middlewares/morgan";
 
 import initializeSocket from "./socket";
 // import redisClient from "./src/modules/redis-client.js";
+
+import userRoute from "./routes/user";
+import playlistRoute from "./routes/playlist";
+import gameRoute from "./routes/game";
+import answerRoute from "./routes/answer";
 
 const app = express();
 
@@ -37,10 +43,14 @@ app.use(morganMiddleware);
 // connect db
 
 // connect route
-// app.use("/todos", todoRoutes);
 
-app.get("/error", (req, res, next) => {
-    const err = new Error("Something went wrong!");
+app.use("/user", userRoute);
+app.use("/playlist", playlistRoute);
+app.use("/game", gameRoute);
+app.use("/answer", answerRoute);
+
+app.use("/", (req, res, next) => {
+    const err = new Error("404 Not Found");
     next(err);
 });
 

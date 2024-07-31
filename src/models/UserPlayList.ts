@@ -42,7 +42,7 @@ UserPlaylist.init(
     {
         sequelize,
         tableName: "user_playlist",
-        timestamps: true,
+        timestamps: false,
     }
 );
 

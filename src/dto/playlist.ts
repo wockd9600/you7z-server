@@ -1,68 +1,72 @@
-import { IsBoolean, IsEmail, IsUrl, IsNumber, IsOptional, IsNotEmpty, IsString, Length, Min, ValidateNested, IsArray, ArrayMinSize, ArrayMaxSize } from "class-validator";
-import { Type } from "class-transformer";
+import { IsBoolean, IsUrl, IsNumber, IsOptional, IsNotEmpty, IsString, Length, Min, ValidateNested, IsArray, ArrayMinSize, ArrayMaxSize } from "class-validator";
+import { Type, Expose } from "class-transformer";
 
-class PlayListDto {
+export class PlayListDto {
+    @Expose()
     @IsOptional()
     @IsNumber()
-    id?: number;
+    id: number;
 
+    @Expose()
     @IsNotEmpty()
     @IsString()
     title: string;
 
-    @IsNotEmpty()
+    @Expose()
     @IsNotEmpty()
     @IsString()
     description: string;
 
+    @Expose()
     @IsOptional()
     @IsNumber()
-    length?: number;
+    length: number;
 
+    @Expose()
     @IsOptional()
     @IsNumber()
-    download_count?: number;
+    download_count: number;
 
-    constructor() {
-        this.id = undefined;
-        this.title = "";
-        this.description = "";
-        this.length = 0;
-        this.download_count = 0;
+    constructor(playlist_id: number, title: string, description: string, length: number, download_count: number) {
+        this.id = playlist_id;
+        this.title = title;
+        this.description = description;
+        this.length = length;
+        this.download_count = download_count;
     }
 }
 
 class SongDto {
+    @Expose()
     @IsNotEmpty()
     @IsUrl()
     url: string;
 
+    @Expose()
     @IsNumber()
     start_time: number;
 
+    @Expose()
     @IsNotEmpty()
     @IsString()
     @Length(1, 128)
     answer: string;
 
+    @Expose()
     @IsNotEmpty()
     @IsString()
     @Length(0, 128)
     description: string;
-
-    constructor() {
-        this.url = "";
-        this.start_time = 0;
-        this.answer = "";
-        this.description = "";
-    }
 }
 
 class PlayListRequestDto {
+    @Expose()
+    @IsNotEmpty()
     @IsNumber()
     @Min(0)
     public page: number;
 
+    @Expose()
     @IsOptional()
     @IsString()
     @Length(1, 25)
@@ -75,14 +79,16 @@ class PlayListRequestDto {
 }
 
 class PlayListResponseDto {
-    public playlists: PlayListDto[];
+    public playlists: Partial<PlayListDto>[];
 
-    constructor(playlists: PlayListDto[]) {
+    constructor(playlists: Partial<PlayListDto>[]) {
         this.playlists = playlists;
     }
 }
 
 class ReferRequestDto {
+    @Expose()
+    @IsNotEmpty()
     @IsNumber()
     public id: number;
 
@@ -110,21 +116,18 @@ export class StoreRequestDto extends ReferRequestDto {}
 export class StoreResponseDto extends BooleanResponseDto {}
 
 export class CreateRequestDto {
+    @Expose()
     @ValidateNested()
     @Type(() => PlayListDto)
     public playlist: PlayListDto;
 
+    @Expose()
     @IsArray()
     @ArrayMinSize(2)
     @ArrayMaxSize(100)
     @ValidateNested({ each: true })
     @Type(() => SongDto)
     public songs: SongDto[];
-
-    constructor(playlist: PlayListDto, songs: SongDto[]) {
-        this.playlist = playlist;
-        this.songs = songs;
-    }
 }
 
 export class CreateResponseDto extends BooleanResponseDto {}

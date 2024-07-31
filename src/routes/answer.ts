@@ -5,7 +5,6 @@ import AnswerRepository from "../repositories/implementations/answer";
 import AnswerController from "../controllers/answer";
 
 import GameRepository from "../repositories/implementations/game";
-import GameService from "../services/game";
 
 import { isLoggedIn } from "../middlewares/auth";
 import { validateBody } from "../middlewares/validator";

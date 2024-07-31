@@ -1,4 +1,5 @@
 import { IsEmail, IsNumber, IsOptional, IsNotEmpty, IsString, Length } from "class-validator";
+import { Expose } from 'class-transformer';
 
 type AuthToken = {
     access_token?: string;
@@ -6,29 +7,32 @@ type AuthToken = {
 };
 
 export class AuthTokenDto {
+    @Expose()
     @IsOptional()
     @IsString()
     access_token: string;
 
+    @Expose()
     @IsOptional()
     @IsString()
     refresh_token: string;
 
-    constructor({ access_token, refresh_token }: AuthToken) {
-        this.access_token = access_token ?? "";
-        this.refresh_token = refresh_token ?? "";
-    }
+    // constructor({ access_token, refresh_token }: AuthToken) {
+    //     this.access_token = access_token ?? "";
+    //     this.refresh_token = refresh_token ?? "";
+    // }
 }
 
 export class LoginRequestDto {
+    @Expose()
     @IsNotEmpty()
     @IsString()
     @Length(10, 255)
-    code: string;
+    public code: string;
 
-    constructor({ code }: { code: string }) {
-        this.code = code;
-    }
+    // constructor({ code }: { code: string }) {
+    //     this.code = code;
+    // }
 }
 
 export class LoginResponseDto extends AuthTokenDto {}

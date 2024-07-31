@@ -32,14 +32,14 @@ export default class UserRepository implements IUserRepository {
     }
 
     async updateUserRefreshToken(user: User, transaction: Transaction | null = null) {
-        const { user_id, refresh_token: rawRefreshToken } = user;
+        const { kakao_id, refresh_token: rawRefreshToken } = user;
         const refresh_token = rawRefreshToken ?? null;
 
         try {
             await User.update(
                 { refresh_token },
                 {
-                    where: { user_id },
+                    where: { kakao_id },
                     transaction: transaction || undefined,
                 }
             );

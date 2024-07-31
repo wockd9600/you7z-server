@@ -44,7 +44,7 @@ UserProfile.init(
     {
         sequelize,
         tableName: "user_profile",
-        timestamps: true,
+        timestamps: false,
     }
 );
 

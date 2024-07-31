@@ -11,8 +11,8 @@ export default class PlaylistRepository implements IPlaylistRepository {
     async getPopularPlaylists(limit: number, offset: number) {
         try {
             return await Playlist.findAll({
-                where: { status: 0 },
-                order: [["download_cnt", "DESC"]],
+                where: { status: 1 },
+                order: [["download_count", "DESC"]],
                 limit,
                 offset,
             });
@@ -25,11 +25,22 @@ export default class PlaylistRepository implements IPlaylistRepository {
         try {
             return await Playlist.findAll({
                 where: {
-                    [Op.or]: [{ title: { [Op.like]: `%${search_term}%` } }, { description: { [Op.like]: `%${search_term}%` } }, { status: 0 }],
+                    [Op.or]: [{ title: { [Op.like]: `%${search_term}%` } }, { description: { [Op.like]: `%${search_term}%` } }, { status: 1 }],
                 },
-                order: [["download_cnt", "DESC"]],
+                order: [["download_count", "DESC"]],
                 limit,
                 offset,
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async findOnePlaylist(playlist: Playlist) {
+        const { playlist_id, user_id } = playlist;
+        try {
+            return await Playlist.findOne({
+                where: { playlist_id, user_id },
             });
         } catch (error) {
             throw error;
@@ -52,8 +63,9 @@ export default class PlaylistRepository implements IPlaylistRepository {
     }
 
     async createPlaylist(playlist: Playlist, transaction: Transaction) {
+        const { title, description, length, user_id } = playlist;
         try {
-            return await Playlist.create({ ...playlist }, { transaction });
+            return await Playlist.create({ title, description, length, user_id }, { transaction });
         } catch (error) {
             throw error;
         }
@@ -84,16 +96,26 @@ export default class PlaylistRepository implements IPlaylistRepository {
         }
     }
 
-    async updatePlaylist(playlist: Playlist) {
+    async updateDeletePlaylist(playlist: Playlist) {
         const { playlist_id, user_id } = playlist;
 
         try {
             await Playlist.update(
-                { is_delete: 1 },
+                { status: 0 },
                 {
                     where: { playlist_id, user_id },
                 }
             );
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateAddDownloadCountPlayllist(playlist: Playlist) {
+        const { playlist_id } = playlist;
+
+        try {
+            await Playlist.increment({ download_count: 1 }, { where: { playlist_id } });
         } catch (error) {
             throw error;
         }

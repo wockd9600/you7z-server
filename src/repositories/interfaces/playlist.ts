@@ -6,13 +6,15 @@ import Song from "../../models/Song";
 export default interface IPlaylistRepository {
     getPopularPlaylists(limit: number, offset: number): Promise<Playlist[]>;
     getSearchPlaylists(limit: number, offset: number, search_term: string): Promise<Playlist[]>;
+    findOnePlaylist(playlist: Playlist): Promise<Playlist | null>;
     findOneUserPlaylist(user_playlist: UserPlaylist): Promise<UserPlaylist | null>;
 
     createPlaylist(playlist: Playlist, transaction: Transaction): Promise<Playlist>;
     createUserPlaylist(user_playlist: UserPlaylist): Promise<UserPlaylist>;
     bulkCreateSong(songs: Partial<Song>[], transaction: Transaction): Promise<void>;
 
-    updatePlaylist(playlist: Playlist): Promise<void>;
+    updateDeletePlaylist(playlist: Playlist): Promise<void>;
+    updateAddDownloadCountPlayllist(playlist: Playlist): Promise<void>;
 
     deleteUserPlaylist(user_playlist: UserPlaylist): Promise<void>;
 }

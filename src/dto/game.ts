@@ -18,6 +18,18 @@ class UserNicknameAndScore {
     }
 }
 
+export class GameSettingDto {
+    public title: string;
+    public game_type: number;
+    public goal_score: number;
+
+    constructor(gameSession: GameSession, playlist: Playlist) {
+        this.title = playlist.title;
+        this.game_type = gameSession.game_type;
+        this.goal_score = gameSession.goal_score;
+    }
+}
+
 class RoomInfo {
     @IsNotEmpty()
     public gameSetting: GameSettingDto;
@@ -32,18 +44,6 @@ class RoomInfo {
         this.gameSetting = gameSetting;
         this.gameUsers = gameUsers;
         this.song = song;
-    }
-}
-
-export class GameSettingDto {
-    public title: string;
-    public game_type: number;
-    public goal_score: number;
-
-    constructor(gameSession: GameSession, playlist: Playlist) {
-        this.title = playlist.title;
-        this.game_type = gameSession.game_type;
-        this.goal_score = gameSession.goal_score;
     }
 }
 

@@ -69,7 +69,7 @@ Playlist.init(
     {
         sequelize,
         tableName: "playlist",
-        timestamps: true,
+        timestamps: false,
     }
 );
 

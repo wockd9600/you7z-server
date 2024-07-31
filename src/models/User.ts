@@ -28,7 +28,7 @@ User.init(
             type: DataTypes.STRING(64),
             validate: {
                 notEmpty: true,
-                len: [64, 64],
+                len: [0, 64],
             },
         },
         status: {
@@ -51,7 +51,7 @@ User.init(
     {
         sequelize,
         tableName: "user",
-        timestamps: true,
+        timestamps: false,
     }
 );
 

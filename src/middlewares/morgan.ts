@@ -1,7 +1,7 @@
 import morgan from "morgan";
 import logger from "../config/logger";
 
-export default morgan("combined", {
+export default morgan(":remote-addr - :remote-user \":method :url HTTP/:http-version\" :status :res[content-length] - :response-time ms", {
     stream: {
         write: (message) => {
             logger.info(message.trim());

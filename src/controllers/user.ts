@@ -4,6 +4,7 @@ import autobind from "autobind-decorator";
 import UserService from "../services/user";
 
 import logError from "../utils/error";
+import { LoginRequestDto } from "../dto/user";
 
 export default class UserController {
     constructor(private userService: UserService) {}
@@ -17,7 +18,6 @@ export default class UserController {
         // access token, refresh token 생성, 설정
         // 전달
 
-        const { code } = req.body;
         // if (!code) return res.status(400).json({ error: "Kakao 인증 코드가 필요합니다." });
 
         try {

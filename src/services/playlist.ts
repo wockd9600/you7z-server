@@ -32,7 +32,11 @@ export default class PlaylistController {
             const playlists = await this.playlistRepository.getPopularPlaylists(limit, offset);
             if (playlists.length === 0) return [];
 
-            const popularResponseDto = new dto.PopularResponseDto(playlists);
+            const playlistDtos = playlists.map((playlist: Playlist) => {
+                return new dto.PlayListDto(playlist.playlist_id, playlist.title, playlist.description, playlist.length, playlist.download_count);
+            });
+
+            const popularResponseDto = new dto.PopularResponseDto(playlistDtos);
             return popularResponseDto;
         } catch (error) {
             throw error;
@@ -70,6 +74,9 @@ export default class PlaylistController {
             if (user_playlist !== null) throw new Error("이미 저장한 플레이 리스트입니다.");
 
             await this.playlistRepository.createUserPlaylist(userPlaylistData);
+
+            const playlistData = new Playlist({ playlist_id: id });
+            await this.playlistRepository.updateAddDownloadCountPlayllist(playlistData);
 
             const storeResponseDto = new dto.StoreResponseDto(true);
             return storeResponseDto;
@@ -112,8 +119,14 @@ export default class PlaylistController {
         const { id } = deleteRequestDto;
 
         try {
-            const playlistData = new Playlist({ playlist_id: id, user_id });
-            await this.playlistRepository.updatePlaylist(playlistData);
+            const playlistData = new Playlist({ playlist_id: id, user_id, status: 0 });
+
+            // playlist가 user가 만든건지 확인함.
+            const playlist = await this.playlistRepository.findOnePlaylist(playlistData);
+            if (playlist === null) throw new Error("not my playlist");
+
+            // playlist의 status = 0로 변경
+            await this.playlistRepository.updateDeletePlaylist(playlistData);
 
             const deleteResponseDto = new dto.DeleteResponseDto(true);
             return deleteResponseDto;
