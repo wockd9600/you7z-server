@@ -12,8 +12,12 @@ export default interface IGameRepository {
     findOnePlayList(playlistData: Playlist): Promise<Playlist | null>;
     findOneUserPlayList(userPlaylistData: UserPlaylist): Promise<UserPlaylist | null>;
     findOneSong(songData: Song): Promise<Song | null>;
+    findAllSong(gameRoomData: GameSession): Promise<Song[]>;
     findAllUserName(user_ids: number[]): Promise<UserProfile[]>;
 
-    createGameRoom(gameRoomData: GameRoom, transaction: Transaction): Promise<GameRoom>;
-    createGameSession(gameRoomData: GameSession, transaction: Transaction): Promise<GameSession>;
+    createGameRoom(gameRoomData: GameRoom, transaction?: Transaction | null): Promise<GameRoom>;
+    createGameSession(gameRoomData: GameSession, transaction?: Transaction | null): Promise<GameSession>;
+
+    updateGameRoom(gameRoomData: GameRoom): Promise<void>;
+    updateGameSession(gameRoomData: GameSession, transaction?: Transaction | null): Promise<void>;
 }

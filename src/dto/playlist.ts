@@ -123,7 +123,7 @@ export class CreateRequestDto {
 
     @Expose()
     @IsArray()
-    @ArrayMinSize(2)
+    @ArrayMinSize(5)
     @ArrayMaxSize(100)
     @ValidateNested({ each: true })
     @Type(() => SongDto)

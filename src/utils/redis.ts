@@ -58,7 +58,6 @@ export class RedisUtil {
         }
     }
 
-
     // check
     public isUserInRoom(user_id: number): boolean {
         // 유저가 있는지 확인
@@ -75,6 +74,7 @@ export class RedisUtil {
 
     // get
     public getUsers() {
+        this.users.sort((a, b) => a.order - b.order);
         return this.users;
     }
 
@@ -92,6 +92,12 @@ export class RedisUtil {
 
         const users_score = await Promise.all(promises);
         return users_score;
+    }
+
+    public async getUserScore(user_id: number) {
+        const key = `session:${this.session_id}:user:${user_id}:score`;
+        const score = await redisClient.get(key);
+        return parseInt(score || "0", 10);
     }
 
     public async isALLAgreeNextAction(): Promise<boolean> {
@@ -136,7 +142,16 @@ export class RedisUtil {
         if (this.isUserInRoom(user_id)) return;
 
         try {
-            const order = this.users.length;
+            this.users.sort((a, b) => a.order - b.order);
+
+            let order = 0;
+            for (let i = 0; i < this.users.length; i++) {
+                if (this.users[i].order !== i) {
+                    order = i;
+                    break;
+                }
+            }
+
             const userKey = `session:${this.session_id}:user:${user_id}`;
             await redisClient.set(userKey, { user_id, order }.toString(), { EX: 60 * 60 });
 
@@ -190,6 +205,18 @@ export class RedisUtil {
     }
 
     // delete
+    public async deleteRoom(user_id: number) {
+        try {
+            this.deleteRoomManger();
+            this.resetAgreeNextAction();
+            this.deleteUser(user_id);
+            this.deleteSong();
+            this.deleteUserScore(user_id);
+        } catch (error) {
+            throw error;
+        }
+    }
+
     public async deleteRoomManger(): Promise<void> {
         try {
             const userKey = `session:${this.session_id}:manager`;
@@ -206,7 +233,7 @@ export class RedisUtil {
         });
 
         Promise.all(promises).catch((error) => {
-            console.error("Error resetting agreeNextAction keys:", error);
+            throw error;
         });
     }
 
@@ -214,14 +241,28 @@ export class RedisUtil {
         try {
             const userKey = `session:${this.session_id}:user:${user_id}`;
             await redisClient.del(userKey);
-            
+
             const userScoreKey = `session:${this.session_id}:user:${user_id}:score`;
             await redisClient.del(userScoreKey);
-            
+
             this.users = this.users.filter((user) => user.user_id !== user_id);
         } catch (error) {
             console.error(`Failed to delete user ${user_id}:`, error);
             throw error;
         }
+    }
+
+    public async deleteUserScore(user_id: number) {
+        try {
+            const key = `session:${this.session_id}:user:${user_id}:score`;
+            await redisClient.del(key);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    public async deleteSong() {
+        const key = `session:${this.session_id}:song`;
+        await redisClient.del(key);
     }
 }

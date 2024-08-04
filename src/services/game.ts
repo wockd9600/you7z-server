@@ -4,16 +4,17 @@ import { sequelize } from "../modules/sequelize";
 import * as dto from "../dto/game";
 
 import createRedisUtil, { RedisUtil } from "../utils/redis";
+import { fetchGameRoomUsersData, createUniqueRoomCode, getGameSessionFromRoomCode } from "../helper/game";
 
 import IGameRepository from "../repositories/interfaces/game";
+
 import GameRoom from "../models/GameRoom";
 import Song from "../models/Song";
-
-import { RoomInfoRequestDto } from "../dto/game";
 import GameSession from "../models/GameSession";
 import Playlist from "../models/Playlist";
 import UserPlaylist from "../models/UserPlaylist";
-import { fetchGameRoomUsersData, createUniqueRoomCode } from "../helper/game";
+
+import { RoomInfoRequestDto } from "../dto/game";
 
 enum GAME_STATUS {
     NOT_STARTED = 0,
@@ -46,13 +47,7 @@ export default class GameService {
 
         try {
             // room_code로 game table, session table row 가져옴
-            const gameRoomData = new GameRoom({ room_code });
-            const gameRoom = await this.gameRepository.findOneGameRoom(gameRoomData);
-            if (gameRoom === null) throw new Error("방 정보를 찾을 수 없습니다. (GameRoom 조회 실패)");
-
-            const gameSessionData = new GameSession({ room_id: gameRoom.room_id });
-            const gameSession = await this.gameRepository.findOneGameSession(gameSessionData);
-            if (gameSession === null) throw new Error("방 정보를 찾을 수 없습니다. (GameSession 조회 실패)");
+            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, room_code);
 
             // 접속한 방이 있는지 확인함
             const previous_session_id = await RedisUtil.getUserOtherSessionId(user_id);

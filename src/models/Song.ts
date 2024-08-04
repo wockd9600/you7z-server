@@ -9,6 +9,7 @@ class Song extends Model {
     public start_time!: number;
     public answer!: string;
     public description!: string;
+    public pass_count!: number;
     public created_at!: Date;
     public is_delete!: number;
 }
@@ -43,6 +44,11 @@ Song.init(
         description: {
             type: DataTypes.STRING(128),
             allowNull: true,
+        },
+        pass_count: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+            allowNull: false,
         },
         created_at: {
             type: DataTypes.DATE,

@@ -61,12 +61,25 @@ export default class GameRepository implements IGameRepository {
         }
     }
 
-    async findOneSong(songData: Song) {
+    async findOneSong(songData: Partial<Song>) {
         const { song_id } = songData;
 
         try {
             return await Song.findOne({
                 where: { song_id },
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async findAllSong(gameRoomData: Partial<GameSession>) {
+        const { playlist_id } = gameRoomData;
+
+        try {
+            return await Song.findAll({
+                attributes: ["song_id"],
+                where: { playlist_id },
             });
         } catch (error) {
             throw error;
@@ -98,6 +111,39 @@ export default class GameRepository implements IGameRepository {
 
         try {
             return await GameSession.create({ room_id, playlist_id }, { transaction });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateGameRoom(gameRoomData: GameRoom) {
+        const { room_id, status } = gameRoomData;
+
+        const updateData: any = { status };
+
+        try {
+            await GameSession.update(updateData, {
+                where: { room_id },
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateGameSession(gameRoomData: GameSession, transaction: Transaction) {
+        const { status, session_id, game_type, goal_score, playlist_id } = gameRoomData;
+
+        const updateData: any = { status };
+
+        if (game_type !== undefined) updateData.game_type = game_type;
+        if (goal_score !== undefined) updateData.goal_score = goal_score;
+        if (playlist_id !== undefined) updateData.playlist_id = playlist_id;
+
+        try {
+            await GameSession.update(updateData, {
+                where: { session_id },
+                transaction,
+            });
         } catch (error) {
             throw error;
         }

@@ -2,6 +2,8 @@ import IGameRepository from "../repositories/interfaces/game";
 import { RedisUtil } from "../utils/redis";
 
 import GameRoom from "../models/GameRoom";
+import GameSession from "../models/GameSession";
+import Song from "../models/Song";
 
 function generateRoomCode() {
     const length = 6;
@@ -12,6 +14,11 @@ function generateRoomCode() {
         result += characters.charAt(randomIndex);
     }
     return result;
+}
+
+export function generateRandomOrder(songs: Song[], goal_score: number) {
+    const shuffled = songs.slice().sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, goal_score);
 }
 
 export function mergeUserDetails(names: { user_id: number; nickname: string }[], scores: { user_id: number; score: number }[], orders: { user_id: number; order: number }[]) {
@@ -54,6 +61,22 @@ export async function fetchGameRoomUsersData(gameRepository: IGameRepository, re
         // user_id로 score, order, name 매치
         const gameRoomUsersData = mergeUserDetails(names, scores, redisUsers);
         return gameRoomUsersData;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getGameSessionFromRoomCode(gameRepository: IGameRepository, room_code: string) {
+    try {
+        const gameRoomData = new GameRoom({ room_code });
+        const gameRoom = await gameRepository.findOneGameRoom(gameRoomData);
+        if (gameRoom === null) throw new Error("방 정보를 찾을 수 없습니다. (GameRoom 조회 실패)");
+
+        const gameSessionData = new GameSession({ room_id: gameRoom.room_id });
+        const gameSession = await gameRepository.findOneGameSession(gameSessionData);
+        if (gameSession === null) throw new Error("방 정보를 찾을 수 없습니다. (GameSession 조회 실패)");
+
+        return { gameRoom, gameSession };
     } catch (error) {
         throw error;
     }

@@ -9,9 +9,9 @@ export default interface IPlaylistRepository {
     findOnePlaylist(playlist: Playlist): Promise<Playlist | null>;
     findOneUserPlaylist(user_playlist: UserPlaylist): Promise<UserPlaylist | null>;
 
-    createPlaylist(playlist: Playlist, transaction: Transaction): Promise<Playlist>;
+    createPlaylist(playlist: Playlist, transaction?: Transaction | null): Promise<Playlist>;
     createUserPlaylist(user_playlist: UserPlaylist): Promise<UserPlaylist>;
-    bulkCreateSong(songs: Partial<Song>[], transaction: Transaction): Promise<void>;
+    bulkCreateSong(songs: Partial<Song>[], transaction?: Transaction | null): Promise<void>;
 
     updateDeletePlaylist(playlist: Playlist): Promise<void>;
     updateAddDownloadCountPlayllist(playlist: Playlist): Promise<void>;

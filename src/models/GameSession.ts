@@ -7,6 +7,7 @@ class GameSession extends Model {
     public session_id!: number;
     public room_id!: string;
     public playlist_id!: number;
+    public question_order!: string;
     public game_type!: number;
     public goal_score!: number;
     public status!: number;
@@ -35,6 +36,10 @@ GameSession.init(
                 model: PlayList,
                 key: "playlist_id",
             },
+        },
+        question_order: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
         },
         game_type: {
             type: DataTypes.TINYINT,
