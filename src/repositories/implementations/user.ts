@@ -31,15 +31,25 @@ export default class UserRepository implements IUserRepository {
         }
     }
 
-    async updateUserRefreshToken(user: User, transaction: Transaction | null = null) {
-        const { kakao_id, refresh_token: rawRefreshToken } = user;
+    async findOneUserProfile({ user_id }: User) {
+        try {
+            return await UserProfile.findOne({
+                where: { user_id },
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateUserRefreshToken(user: Partial<User>, transaction: Transaction | null = null) {
+        const { user_id, refresh_token: rawRefreshToken } = user;
         const refresh_token = rawRefreshToken ?? null;
 
         try {
             await User.update(
                 { refresh_token },
                 {
-                    where: { kakao_id },
+                    where: { user_id },
                     transaction: transaction || undefined,
                 }
             );
@@ -59,7 +69,7 @@ export default class UserRepository implements IUserRepository {
 
     async updateUserProfile({ user_id, nickname }: UserProfile) {
         try {
-            await User.update({ nickname }, { where: { user_id } });
+            await UserProfile.update({ nickname }, { where: { user_id } });
             return;
         } catch (error) {
             throw error;

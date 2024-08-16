@@ -7,7 +7,7 @@ export default function logError(error: Error, req: Request) {
     logger.error({
         message: error.message,
         method: req.method,
-        user_id: req.user?.user_id,
+        user_id: req.user?.user_id || -1,
         url: req.originalUrl,
         stack: error.stack,
         clientIp: req.ip,

@@ -78,7 +78,7 @@ export default class UserController {
             return res.status(200).json({ success: true });
         } catch (error) {
             if (error instanceof Error) logError(error, req);
-            return res.status(500).json({ message: "이름 변경 오류" });
+            return res.status(500).json({ message: "서버 오류입니다. 잠시 후 다시 시도해주세요." });
         }
     }
 

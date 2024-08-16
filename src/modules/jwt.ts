@@ -10,8 +10,12 @@ const options: SignOptions = {
     issuer: "issuer", // 발행자
 };
 
+interface tokenInfo {
+    user_id: number;
+}
+
 export default {
-    sign: async (user: { user_id: number }) => {
+    sign: async (user: tokenInfo) => {
         const payload = {
             id: user.user_id,
         };
@@ -21,7 +25,7 @@ export default {
         const decoded = jwt.verify(token, SECRET_KEY);
         return decoded;
     },
-    decode: async (token: string) => {
+    decode: (token: string) => {
         return jwt.decode(token);
     },
 };

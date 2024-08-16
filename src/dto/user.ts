@@ -1,5 +1,5 @@
 import { IsEmail, IsNumber, IsOptional, IsNotEmpty, IsString, Length } from "class-validator";
-import { Expose } from 'class-transformer';
+import { Expose } from "class-transformer";
 
 type AuthToken = {
     access_token?: string;
@@ -35,18 +35,20 @@ export class LoginRequestDto {
     // }
 }
 
-export class LoginResponseDto extends AuthTokenDto {}
+export class LoginResponseDto extends AuthTokenDto {
+    @Expose()
+    @IsOptional()
+    @IsString()
+    nickname?: string;
+}
 
 export class RefreshRequestDto extends AuthTokenDto {}
 export class RefreshResponsetDto extends AuthTokenDto {}
 
 export class UpdateNameDto {
+    @Expose()
     @IsNotEmpty()
     @IsString()
     @Length(1, 20)
     nickname: string;
-
-    constructor({ nickname }: { nickname: string }) {
-        this.nickname = nickname;
-    }
 }

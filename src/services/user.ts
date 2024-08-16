@@ -28,7 +28,7 @@ export default class UserService {
         const data: DataType = {
             grant_type: "authorization_code",
             client_id: process.env.KAKAO_JS_APP_KEY!,
-            redirect_uri: process.env.JWT_SECRET_KEY!,
+            redirect_uri: process.env.KAKAO_REDIRECT_URI!,
             code,
         };
 
@@ -83,21 +83,26 @@ export default class UserService {
             if (kakao_user.err) throw new Error(kakao_user.err);
 
             const userData = new User({
-                kakao_id: 12345,
+                kakao_id: kakao_user.id,
                 refresh_token: encrypt().toString(),
             });
 
             const [user, created] = await this.userRepository.findOrCreateUser(userData, transaction);
+            userData.user_id = user.user_id;
+
+            const userProfileData = new UserProfile({
+                user_id: user.user_id,
+            });
 
             if (created) {
-                const userProfileData = new UserProfile({
-                    user_id: user.user_id,
-                    nickname: this.generateRandomNickname(),
-                });
-
+                userProfileData.nickname = this.generateRandomNickname();
                 await this.userRepository.createUserProfile(userProfileData, transaction);
             } else {
                 await this.userRepository.updateUserRefreshToken(userData, transaction);
+                const userProfile = await this.userRepository.findOneUserProfile(userData);
+                if (userProfile === null) throw new Error("don't exist user profile");
+
+                userProfileData.nickname = userProfile?.nickname;
             }
 
             const access_token = await jwt.sign({ user_id: user.user_id });
@@ -105,14 +110,14 @@ export default class UserService {
             const loginResponseDto = new LoginResponseDto();
             loginResponseDto.access_token = access_token;
             loginResponseDto.refresh_token = userData.refresh_token;
+            loginResponseDto.nickname = userProfileData.nickname;
 
             await transaction.commit();
 
             return loginResponseDto;
         } catch (error) {
             await transaction.rollback();
-            console.error("Error during login or sign-up:", error);
-            throw new Error("로그인 또는 회원가입 중 오류가 발생했습니다.");
+            throw error;
         }
     }
 
@@ -145,7 +150,7 @@ export default class UserService {
 
             const refreshResponseDto = new RefreshResponsetDto();
             refreshResponseDto.access_token = newAccessToken;
-            
+
             return refreshResponseDto;
         } catch (error) {
             throw error;
