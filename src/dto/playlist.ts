@@ -1,6 +1,8 @@
 import { IsBoolean, IsUrl, IsNumber, IsOptional, IsNotEmpty, IsString, Length, Min, ValidateNested, IsArray, ArrayMinSize, ArrayMaxSize } from "class-validator";
 import { Type, Expose } from "class-transformer";
 
+import Playlist from "../models/Playlist";
+
 export class PlayListDto {
     @Expose()
     @IsOptional()
@@ -25,26 +27,32 @@ export class PlayListDto {
     @Expose()
     @IsOptional()
     @IsNumber()
-    download_count: number;
+    score: number;
 
-    constructor(playlist_id: number, title: string, description: string, length: number, download_count: number) {
+    @Expose()
+    @IsOptional()
+    @IsNumber()
+    downloaded: number;
+
+    constructor({ playlist_id, title, description, length, download_count }: Playlist, downloaded: number) {
         this.id = playlist_id;
         this.title = title;
         this.description = description;
         this.length = length;
-        this.download_count = download_count;
+        this.score = download_count;
+        this.downloaded = downloaded;
     }
 }
 
 class SongDto {
     @Expose()
     @IsNotEmpty()
-    @IsUrl()
-    url: string;
+    @IsString()
+    youtubeLink: string;
 
     @Expose()
-    @IsNumber()
-    start_time: number;
+    @IsString()
+    startTime: string;
 
     @Expose()
     @IsNotEmpty()
@@ -53,7 +61,7 @@ class SongDto {
     answer: string;
 
     @Expose()
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
     @Length(0, 128)
     description: string;
@@ -70,7 +78,7 @@ class PlayListRequestDto {
     @IsOptional()
     @IsString()
     @Length(1, 25)
-    public search_term: string;
+    public search_term?: string;
 
     constructor(page: number, search_term?: string) {
         this.page = page;
@@ -106,7 +114,6 @@ class BooleanResponseDto {
     }
 }
 
-export class PopularRequestDto extends PlayListRequestDto {}
 export class PopularResponseDto extends PlayListResponseDto {}
 
 export class SearchRequestDto extends PlayListRequestDto {}
@@ -132,8 +139,23 @@ export class CreateRequestDto {
 
 export class CreateResponseDto extends BooleanResponseDto {}
 
+export class CheckYoutubeLinkRequestDto {
+    @Expose()
+    @IsNotEmpty()
+    @IsUrl()
+    public url: string;
+}
+
+export class CheckYoutubeLinkResponseDto {
+    @Expose()
+    @IsNotEmpty()
+    @IsUrl()
+    public title: string;
+    public thumbnails: string;
+    public duration: string;
+}
+
 export class DeleteRequestDto extends ReferRequestDto {}
 export class DeleteResponseDto extends BooleanResponseDto {}
 
-export class DeleteStoreRequestDto extends ReferRequestDto {}
 export class DeleteStoreResponseDto extends BooleanResponseDto {}

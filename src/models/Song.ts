@@ -6,7 +6,7 @@ class Song extends Model {
     public song_id!: number;
     public playlist_id!: number;
     public url!: string;
-    public start_time!: number;
+    public start_time!: string;
     public answer!: string;
     public description!: string;
     public pass_count!: number;

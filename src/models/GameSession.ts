@@ -2,10 +2,12 @@ import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../modules/sequelize";
 import GameRoom from "./GameRoom";
 import PlayList from "./Playlist"; // Assuming you have a Playlist model
+import User from "./User";
 
 class GameSession extends Model {
     public session_id!: number;
     public room_id!: string;
+    public user_id!: number;
     public playlist_id!: number;
     public question_order!: string;
     public game_type!: number;
@@ -29,6 +31,14 @@ GameSession.init(
                 key: "room_id",
             },
         },
+        user_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: User,
+                key: "user_id",
+            },
+        },
         playlist_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -44,6 +54,7 @@ GameSession.init(
         game_type: {
             type: DataTypes.TINYINT,
             allowNull: false,
+            defaultValue: 1,
             validate: {
                 isIn: [[0, 1]], // [1s, full]
             },
@@ -77,7 +88,7 @@ GameSession.init(
     {
         sequelize,
         tableName: "game_session",
-        timestamps: true,
+        timestamps: false,
     }
 );
 

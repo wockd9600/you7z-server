@@ -15,17 +15,18 @@ const service = new GameService(repository);
 const controller = new GameController(service);
 
 /* GET */
-router.get("/rooms/:roomId", isLoggedIn, validateBody(RoomInfoRequestDto), controller.getRoomInfo);
+router.get("/room/:roomCode", isLoggedIn, controller.getRoomInfo);
 
 /* POST */
-router.post("/rooms/add", isLoggedIn, controller.createRoom);
-// router.post("/rooms/start", controller.startGame); // 게임 시작
-// router.post("/rooms/kick", controller.kickUser); // 게임 시작
+router.post("/room/enter", isLoggedIn, validateBody(RoomInfoRequestDto), controller.enterRoom);
+router.post("/room/add", isLoggedIn, controller.createRoom);
+// router.post("/room/start", controller.startGame); // 게임 시작
+// router.post("/room/kick", controller.kickUser); // 게임 시작
 
 // /* PATCH */
-// router.patch("/rooms/update", controller.updateRoomSettings);
+// router.patch("/room/update", controller.updateRoomSettings);
 
 // /* DELETE */
-// router.delete("/rooms/leave", controller.leaveRoom);
+// router.delete("/room/leave", controller.leaveRoom);
 
 export default router;

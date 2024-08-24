@@ -43,7 +43,7 @@ GameRoom.init(
     {
         sequelize,
         tableName: "game_room",
-        timestamps: true,
+        timestamps: false,
     }
 );
 

@@ -10,7 +10,7 @@ export default class answerRepository implements IAnswerRepository {
         try {
             return await Answer.findAll({
                 where: { session_id },
-                order: [["createdAt", "DESC"]],
+                order: [["created_at", "DESC"]],
                 limit,
             });
         } catch (error) {
@@ -25,7 +25,7 @@ export default class answerRepository implements IAnswerRepository {
         try {
             return await Answer.create({
                 where: { session_id },
-                order: [["createdAt", "DESC"]],
+                order: [["created_at", "DESC"]],
                 limit,
             });
         } catch (error) {

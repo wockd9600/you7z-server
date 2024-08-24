@@ -1,7 +1,7 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../modules/sequelize";
 import User from "./User"; // Assuming you have a User model
-import PlayList from "./Playlist"; // Assuming you have a Playlist model
+import Playlist from "./Playlist"; // Assuming you have a Playlist model
 
 class UserPlaylist extends Model {
     public user_playlist_id!: number;
@@ -20,7 +20,7 @@ UserPlaylist.init(
         playlist_id: {
             type: DataTypes.INTEGER,
             references: {
-                model: PlayList,
+                model: Playlist,
                 key: "playlist_id",
             },
             allowNull: false,
@@ -47,6 +47,6 @@ UserPlaylist.init(
 );
 
 UserPlaylist.belongsTo(User, { foreignKey: "user_id" });
-UserPlaylist.belongsTo(PlayList, { foreignKey: "playlist_id" });
+// UserPlaylist.belongsTo(Playlist, { foreignKey: "playlist_id" });
 
 export default UserPlaylist;

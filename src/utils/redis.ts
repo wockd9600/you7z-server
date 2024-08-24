@@ -19,20 +19,22 @@ export class RedisUtil {
             const pattern = `session:*:user:${user_id}`;
             const keys = await redisClient.keys(pattern);
 
+            if (keys.length === 0) return -1;
+
             return parseInt(keys[0].split(":")[1], 10);
         } catch (error) {
             throw error;
         }
     }
 
-    static async deleteUserInOtherRoom(session_id: number, user_id: number): Promise<void> {
-        try {
-            const key = `session:${session_id}:user:${user_id}`;
-            await redisClient.del(key);
-        } catch (error) {
-            throw error;
-        }
-    }
+    // static async deleteUserInOtherRoom(session_id: number, user_id: number): Promise<void> {
+    //     try {
+    //         const key = `session:${session_id}:user:${user_id}`;
+    //         await redisClient.del(key);
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 
     public async initialize(): Promise<void> {
         // 현재 유저들 가져옴 "session:{session_id}:user"
@@ -41,8 +43,10 @@ export class RedisUtil {
             const keys = await redisClient.keys(pattern);
             if (keys.length === 0) return;
 
+            const filteredKeys = keys.filter((key) => /^session:\d+:user:\d+$/.test(key));
+
             const users = await Promise.all(
-                keys.map(async (key) => {
+                filteredKeys.map(async (key) => {
                     const userData = await redisClient.get(key);
                     if (userData) {
                         const user = JSON.parse(userData);
@@ -51,7 +55,6 @@ export class RedisUtil {
                     return null;
                 })
             );
-
             this.users = users.filter((user) => user !== null);
         } catch (error) {
             console.error("Failed to fetch users:", error);
@@ -61,7 +64,7 @@ export class RedisUtil {
     // check
     public isUserInRoom(user_id: number): boolean {
         // 유저가 있는지 확인
-        const result = this.users.some((user) => user_id in user);
+        const result = this.users.some((user) => user.user_id === user_id);
         return result;
     }
 
@@ -153,7 +156,7 @@ export class RedisUtil {
             }
 
             const userKey = `session:${this.session_id}:user:${user_id}`;
-            await redisClient.set(userKey, { user_id, order }.toString(), { EX: 60 * 60 });
+            await redisClient.set(userKey, JSON.stringify({ user_id, order }), { EX: 60 * 60 });
 
             await this.setUserScore(user_id, 0);
 

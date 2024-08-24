@@ -1,4 +1,7 @@
+import axios from "axios";
 import autobind from "autobind-decorator";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 import { sequelize } from "../modules/sequelize";
 import * as dto from "../dto/playlist";
@@ -8,7 +11,7 @@ import IPlaylistRepository from "../repositories/interfaces/playlist";
 import Playlist from "../models/Playlist";
 import UserPlaylist from "../models/UserPlaylist";
 
-import { PopularRequestDto, SearchRequestDto, StoreRequestDto, CreateRequestDto, DeleteRequestDto, DeleteStoreRequestDto } from "../dto/playlist";
+import { StoreRequestDto, CreateRequestDto, CheckYoutubeLinkRequestDto, DeleteRequestDto } from "../dto/playlist";
 
 export default class PlaylistController {
     constructor(private playlistRepository: IPlaylistRepository) {}
@@ -23,17 +26,19 @@ export default class PlaylistController {
     }
 
     @autobind
-    async getPopularPlaylists(popularRequestDto: PopularRequestDto) {
-        const { page } = popularRequestDto;
-
+    async getPlaylists(page: number, type: number, search_term: string, user_id: number) {
         try {
             const { limit, offset } = this.getOffsetAndLimit(page);
 
-            const playlists = await this.playlistRepository.getPopularPlaylists(limit, offset);
+            const playlists = await this.playlistRepository.getPlaylists(limit, offset, user_id, type, search_term);
             if (playlists.length === 0) return [];
 
             const playlistDtos = playlists.map((playlist: Playlist) => {
-                return new dto.PlayListDto(playlist.playlist_id, playlist.title, playlist.description, playlist.length, playlist.download_count);
+                let downloaded = 0;
+                if ("UserPlaylists.downloaded" in playlist) {
+                    downloaded = (playlist["UserPlaylists.downloaded"] as number) || 0;
+                }
+                return new dto.PlayListDto(playlist, downloaded);
             });
 
             const popularResponseDto = new dto.PopularResponseDto(playlistDtos);
@@ -43,22 +48,22 @@ export default class PlaylistController {
         }
     }
 
-    @autobind
-    async searchPlaylists(searchRequestDto: SearchRequestDto) {
-        const { page, search_term } = searchRequestDto;
+    // @autobind
+    // async searchPlaylists(searchRequestDto: SearchRequestDto) {
+    //     const { page, search_term } = searchRequestDto;
 
-        try {
-            const { limit, offset } = this.getOffsetAndLimit(page);
+    //     try {
+    //         const { limit, offset } = this.getOffsetAndLimit(page);
 
-            const playlists = await this.playlistRepository.getSearchPlaylists(limit, offset, search_term);
-            if (playlists.length === 0) return [];
+    //         const playlists = await this.playlistRepository.getPlaylists(limit, offset, -1, 0, search_term || "");
+    //         if (playlists.length === 0) return [];
 
-            const searchResponseDto = new dto.SearchResponseDto(playlists);
-            return searchResponseDto;
-        } catch (error) {
-            throw error;
-        }
-    }
+    //         const searchResponseDto = new dto.SearchResponseDto(playlists);
+    //         return searchResponseDto;
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 
     @autobind
     async storePlaylist(storeRequestDto: StoreRequestDto, user_id: number) {
@@ -76,7 +81,7 @@ export default class PlaylistController {
             await this.playlistRepository.createUserPlaylist(userPlaylistData);
 
             const playlistData = new Playlist({ playlist_id: id });
-            await this.playlistRepository.updateAddDownloadCountPlayllist(playlistData);
+            await this.playlistRepository.increaseDownloadCountPlayllist(playlistData);
 
             const storeResponseDto = new dto.StoreResponseDto(true);
             return storeResponseDto;
@@ -94,15 +99,25 @@ export default class PlaylistController {
         try {
             const length = songs.length;
 
-            const userPlaylistData = new Playlist({ ...playlist, user_id, length });
-            const user_playlist = await this.playlistRepository.createPlaylist(userPlaylistData, transaction);
+            const playlistData = new Playlist({ ...playlist, user_id, length });
+            const user_playlist = await this.playlistRepository.createPlaylist(playlistData, transaction);
 
             const songEntities = songs.map((song) => ({
-                ...song,
+                answer: song.answer,
+                description: song.description,
+                url: song.youtubeLink,
+                start_time: song.startTime,
                 playlist_id: user_playlist.playlist_id,
             }));
 
             await this.playlistRepository.bulkCreateSong(songEntities, transaction);
+
+            const userPlaylistData = new UserPlaylist({
+                playlist_id: user_playlist.playlist_id,
+                user_id,
+            });
+
+            await this.playlistRepository.createUserPlaylist(userPlaylistData);
 
             const createResponseDto = new dto.CreateResponseDto(true);
             await transaction.commit();
@@ -110,6 +125,39 @@ export default class PlaylistController {
             return createResponseDto;
         } catch (error) {
             await transaction.rollback();
+            throw error;
+        }
+    }
+
+    getYoutubeVideoId(url: string) {
+        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/;
+        const match = url.match(regex);
+        return match ? match[1] : null;
+    }
+
+    @autobind
+    async checkYoutubeLink(createRequestDto: CheckYoutubeLinkRequestDto) {
+        const { url } = createRequestDto;
+
+        try {
+            const videoId = this.getYoutubeVideoId(url);
+            if (!videoId) throw new Error("유효한 YouTube URL이 아닙니다.");
+
+            const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+            const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,contentDetails&key=${YOUTUBE_API_KEY}`;
+            const config = {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            };
+            const response = await axios.get(apiUrl, config);
+            const item = response.data.items[0];
+            const responseData = new dto.CheckYoutubeLinkResponseDto();
+            responseData.title = item.snippet.title;
+            responseData.thumbnails = item.snippet.thumbnails.standard;
+            responseData.duration = item.contentDetails.duration;
+            return responseData;
+        } catch (error) {
             throw error;
         }
     }
@@ -136,12 +184,17 @@ export default class PlaylistController {
     }
 
     @autobind
-    async removeStoredPlaylist(deleteStoreRequestDto: DeleteStoreRequestDto, user_id: number) {
-        const { id } = deleteStoreRequestDto;
-
+    async removeStoredPlaylist(id: number, user_id: number) {
         try {
             const userPlaylistData = new UserPlaylist({ playlist_id: id, user_id });
+
+            const user_playlist = await this.playlistRepository.findOneUserPlaylist(userPlaylistData);
+            if (user_playlist === null) throw new Error("저장한F 플레이리스트가 없습니다.");
+
             await this.playlistRepository.deleteUserPlaylist(userPlaylistData);
+
+            const playlistData = new Playlist({ playlist_id: id });
+            await this.playlistRepository.decreaseDownloadCountPlayllist(playlistData);
 
             const deleteStoreResponseDto = new dto.DeleteStoreResponseDto(true);
             return deleteStoreResponseDto;

@@ -17,7 +17,7 @@ export default class GameRepository implements IGameRepository {
         try {
             return await GameRoom.findOne({
                 where: { room_code, status: 0 },
-                order: [["createdAt", "DESC"]],
+                order: [["created_at", "DESC"]],
             });
         } catch (error) {
             throw error;
@@ -30,7 +30,7 @@ export default class GameRepository implements IGameRepository {
         try {
             return await GameSession.findOne({
                 where: { [Op.or]: [{ room_id }, { session_id }] },
-                order: [["createdAt", "DESC"]],
+                order: [["created_at", "DESC"]],
             });
         } catch (error) {
             throw error;
@@ -89,7 +89,11 @@ export default class GameRepository implements IGameRepository {
     async findAllUserName(user_ids: number[]) {
         try {
             return await UserProfile.findAll({
-                where: { user_ids },
+                where: {
+                    user_id: {
+                        [Op.in]: user_ids,
+                    },
+                },
             });
         } catch (error) {
             throw error;
@@ -107,10 +111,10 @@ export default class GameRepository implements IGameRepository {
     }
 
     async createGameSession(gameRoomData: GameSession, transaction: Transaction) {
-        const { room_id, playlist_id } = gameRoomData;
+        const { room_id, playlist_id, user_id } = gameRoomData;
 
         try {
-            return await GameSession.create({ room_id, playlist_id }, { transaction });
+            return await GameSession.create({ room_id, user_id, playlist_id }, { transaction });
         } catch (error) {
             throw error;
         }

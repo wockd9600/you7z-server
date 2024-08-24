@@ -33,7 +33,7 @@ export function mergeUserDetails(names: { user_id: number; nickname: string }[],
     }, {} as { [key: number]: number });
 
     return scores.map((scoreItem) => ({
-        id: scoreItem.user_id,
+        userId: scoreItem.user_id,
         nickname: nameDict[scoreItem.user_id],
         order: orderDict[scoreItem.user_id],
         score: scoreItem.score,

@@ -1,17 +1,18 @@
 import { IsNotEmpty, IsOptional, IsString, Length } from "class-validator";
+import { Expose } from "class-transformer";
 
 import GameSession from "../models/GameSession";
 import Song from "../models/Song";
 import Playlist from "../models/Playlist";
 
-class UserNicknameAndScore {
-    id: number;
+export class UserNicknameAndScore {
+    userId: number;
     nickname: string;
     order: number;
     score: number;
 
     constructor(id: number, nickname: string, order: number, score: number) {
-        this.id = id;
+        this.userId = id;
         this.order = order;
         this.nickname = nickname;
         this.score = score;
@@ -19,44 +20,53 @@ class UserNicknameAndScore {
 }
 
 export class GameSettingDto {
-    public title: string;
-    public game_type: number;
-    public goal_score: number;
+    public playlist: string;
+    public gameType: number;
+    public targetScore: number;
 
     constructor(gameSession: GameSession, playlist: Playlist) {
-        this.title = playlist.title;
-        this.game_type = gameSession.game_type;
-        this.goal_score = gameSession.goal_score;
+        this.playlist = playlist.title;
+        this.gameType = gameSession.game_type;
+        this.targetScore = gameSession.goal_score;
     }
 }
 
 class RoomInfo {
     @IsNotEmpty()
+    public status: number;
+
+    @IsNotEmpty()
+    public roomCode: string;
+
+    @IsNotEmpty()
     public gameSetting: GameSettingDto;
 
     @IsNotEmpty()
-    public gameUsers: UserNicknameAndScore[];
+    public users: UserNicknameAndScore[];
 
     @IsOptional()
     public song: Song | null;
 
-    constructor(gameSetting: GameSettingDto, gameUsers: UserNicknameAndScore[], song: Song | null) {
+    constructor(status: number, roomCode: string, gameSetting: GameSettingDto, gameUsers: UserNicknameAndScore[], song: Song | null) {
+        this.status = status;
+        this.roomCode = roomCode;
         this.gameSetting = gameSetting;
-        this.gameUsers = gameUsers;
+        this.users = gameUsers;
         this.song = song;
     }
 }
 
 export class RoomInfoRequestDto {
+    @Expose()
     @IsNotEmpty()
     @IsString()
     @Length(1, 255)
-    public room_code: string;
+    public roomCode: string;
 
-    constructor(room_code: string) {
-        this.room_code = room_code;
+    constructor(roomCode: string) {
+        this.roomCode = roomCode;
     }
 }
 
 export class RoomInfoResponseDto extends RoomInfo {}
-export class CreateRoomResponseDto extends RoomInfo {}
+// export class CreateRoomResponseDto extends RoomInfo {}

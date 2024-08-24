@@ -7,7 +7,7 @@ import PlaylistController from "../controllers/playlist";
 import { isLoggedIn } from "../middlewares/auth";
 import { validateBody } from "../middlewares/validator";
 
-import { PopularRequestDto, SearchRequestDto, StoreRequestDto, CreateRequestDto, DeleteRequestDto, DeleteStoreRequestDto } from "../dto/playlist"
+import { StoreRequestDto, CreateRequestDto, CheckYoutubeLinkRequestDto, DeleteRequestDto } from "../dto/playlist";
 
 const router = Router();
 const repository = new PlaylistRepository();
@@ -15,12 +15,13 @@ const service = new PlaylistService(repository);
 const controller = new PlaylistController(service);
 
 /* GET */
-router.get("/popular", isLoggedIn, validateBody(PopularRequestDto), controller.getPopularPlaylist);
-router.get("/search", isLoggedIn, validateBody(SearchRequestDto), controller.getSearchPlaylist);
+router.get("/", isLoggedIn, controller.getPopularPlaylist);
+// router.get("/search", isLoggedIn, validateBody(SearchRequestDto), controller.getSearchPlaylist);
 
 /* POST */
 router.post("/store", isLoggedIn, validateBody(StoreRequestDto), controller.postStorePlaylist);
 router.post("/create", isLoggedIn, validateBody(CreateRequestDto), controller.postCreatePlaylist);
+router.post("/checkYoutubeLink", isLoggedIn, validateBody(CheckYoutubeLinkRequestDto), controller.postCheckYoutubeLink);
 // router.post("/song/add", controller.postAddSong);
 
 /* PATCH */
@@ -28,6 +29,6 @@ router.post("/create", isLoggedIn, validateBody(CreateRequestDto), controller.po
 router.patch("/delete", isLoggedIn, validateBody(DeleteRequestDto), controller.patchDeletePlaylist);
 
 /* DELETE */
-router.delete("/store", isLoggedIn, validateBody(DeleteStoreRequestDto), controller.deleteStorePlaylist);
+router.delete("/store", isLoggedIn, controller.deleteStorePlaylist);
 
 export default router;

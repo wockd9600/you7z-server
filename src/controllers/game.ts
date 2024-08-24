@@ -12,15 +12,30 @@ export default class GameController {
     async getRoomInfo(req: Request, res: Response) {
         try {
             const user_id = req.user!.user_id;
+            const roomCode = req.params.roomCode as string;
 
-            const roomInfoRequestDto = req.dto;
-            const result = await this.gameService.getRoomInfo(roomInfoRequestDto, user_id);
+            const result = await this.gameService.getRoomInfo(roomCode, user_id);
 
             if (result.success) {
-                res.status(200).json(result.roomInfoResponseDto);
+                res.status(200).json(result);
             } else {
-                res.status(409).json(result);
+                res.status(200).json(result);
             }
+        } catch (error) {
+            if (error instanceof Error) logError(error, req);
+            return res.status(500).json({ message: "입장할 수 없는 방입니다." });
+        }
+    }
+
+    @autobind
+    async enterRoom(req: Request, res: Response) {
+        try {
+            const user_id = req.user!.user_id;
+
+            const roomInfoRequestDto = req.dto;
+            const result = await this.gameService.enterRoom(roomInfoRequestDto, user_id);
+
+            res.status(200).json(result);
         } catch (error) {
             if (error instanceof Error) logError(error, req);
             return res.status(500).json({ message: "입장할 수 없는 방입니다." });
@@ -34,10 +49,11 @@ export default class GameController {
 
             const result = await this.gameService.createRoom(user_id);
 
+            // 룸코드 전달
             if (result.success) {
-                res.status(200).json(result.createRoomResponseDto);
+                res.status(200).json(result);
             } else {
-                res.status(409).json(result);
+                res.status(200).json(result);
             }
         } catch (error) {
             if (error instanceof Error) logError(error, req);

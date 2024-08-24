@@ -15,8 +15,15 @@ export default class PlaylistController {
         // 전달
 
         try {
-            const popularRequestDto = req.dto;
-            const popularResponseDto = await this.playlistService.getPopularPlaylists(popularRequestDto);
+            const user_id = req.user!.user_id;
+
+            const page: number = parseInt(req.query.page as string, 10);
+            const type: number = parseInt(req.query.type as string, 10);
+            const search_term: string = (req.query.search_term as string) || "";
+            if (isNaN(page)) throw new Error("Page must be a number");
+            if (isNaN(type)) throw new Error("Type must be a number");
+
+            const popularResponseDto = await this.playlistService.getPlaylists(page, type, search_term, user_id);
 
             res.status(200).json(popularResponseDto);
         } catch (error) {
@@ -25,22 +32,22 @@ export default class PlaylistController {
         }
     }
 
-    @autobind
-    async getSearchPlaylist(req: Request, res: Response) {
-        // 검색어를 전달 받아서
-        // 노래모음에서 검색 (db에서 is_delete = 0은 가져오지 않음.)
-        // 해당하는 노래가 있으면 전달
+    // @autobind
+    // async getSearchPlaylist(req: Request, res: Response) {
+    //     // 검색어를 전달 받아서
+    //     // 노래모음에서 검색 (db에서 is_delete = 0은 가져오지 않음.)
+    //     // 해당하는 노래가 있으면 전달
 
-        try {
-            const searchRequestDto = req.dto;
-            const searchResponseDto = await this.playlistService.searchPlaylists(searchRequestDto);
+    //     try {
+    //         const searchRequestDto = req.dto;
+    //         const searchResponseDto = await this.playlistService.searchPlaylists(searchRequestDto);
 
-            res.status(200).json(searchResponseDto);
-        } catch (error) {
-            if (error instanceof Error) logError(error, req);
-            return res.status(500).json({ message: "검색할 수 없습니다." });
-        }
-    }
+    //         res.status(200).json(searchResponseDto);
+    //     } catch (error) {
+    //         if (error instanceof Error) logError(error, req);
+    //         return res.status(500).json({ message: "검색할 수 없습니다." });
+    //     }
+    // }
 
     @autobind
     async postStorePlaylist(req: Request, res: Response) {
@@ -80,6 +87,21 @@ export default class PlaylistController {
         }
     }
 
+    @autobind
+    async postCheckYoutubeLink(req: Request, res: Response) {
+        // url 받아서 체크
+
+        try {
+            const checkYoutubeLinkRequestDto = req.dto;
+            const checkYoutubeLinkResponseDto = await this.playlistService.checkYoutubeLink(checkYoutubeLinkRequestDto);
+
+            res.status(201).json(checkYoutubeLinkResponseDto);
+        } catch (error) {
+            if (error instanceof Error) logError(error, req);
+            return res.status(500).json({ message: "유튜브 링크를 확인할 수 없습니다." });
+        }
+    }
+
     // @autobind
     // postAddSong(req: Request, res: Response) {}
 
@@ -111,8 +133,10 @@ export default class PlaylistController {
         try {
             const user_id = req.user!.user_id;
 
-            const deleteStoreRequestDto = req.dto;
-            const deleteStoreResponseDto = await this.playlistService.removeStoredPlaylist(deleteStoreRequestDto, user_id);
+            const id: number = parseInt(req.query.id as string, 10);
+            if (isNaN(id)) throw new Error("ID must be a number");
+
+            const deleteStoreResponseDto = await this.playlistService.removeStoredPlaylist(id, user_id);
 
             res.status(200).json(deleteStoreResponseDto);
         } catch (error) {

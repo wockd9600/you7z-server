@@ -4,8 +4,8 @@ import UserPlaylist from "../../models/UserPlaylist";
 import Song from "../../models/Song";
 
 export default interface IPlaylistRepository {
-    getPopularPlaylists(limit: number, offset: number): Promise<Playlist[]>;
-    getSearchPlaylists(limit: number, offset: number, search_term: string): Promise<Playlist[]>;
+    getPlaylists(limit: number, offset: number, user_id: number, type: number, search_term?: string | undefined): Promise<Playlist[]>;
+    // getSearchPlaylists(limit: number, offset: number, search_term: string): Promise<Playlist[]>;
     findOnePlaylist(playlist: Playlist): Promise<Playlist | null>;
     findOneUserPlaylist(user_playlist: UserPlaylist): Promise<UserPlaylist | null>;
 
@@ -14,7 +14,8 @@ export default interface IPlaylistRepository {
     bulkCreateSong(songs: Partial<Song>[], transaction?: Transaction | null): Promise<void>;
 
     updateDeletePlaylist(playlist: Playlist): Promise<void>;
-    updateAddDownloadCountPlayllist(playlist: Playlist): Promise<void>;
+    increaseDownloadCountPlayllist(playlist: Playlist): Promise<void>;
+    decreaseDownloadCountPlayllist(playlist: Playlist): Promise<void>;
 
     deleteUserPlaylist(user_playlist: UserPlaylist): Promise<void>;
 }

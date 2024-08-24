@@ -1,6 +1,7 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../modules/sequelize";
 import User from "./User"; // Assuming you have a User model
+import UserPlaylist from "./UserPlaylist";
 
 class Playlist extends Model {
     public playlist_id!: number;
@@ -74,5 +75,6 @@ Playlist.init(
 );
 
 Playlist.belongsTo(User, { foreignKey: "user_id" });
+Playlist.hasMany(UserPlaylist, { foreignKey: "playlist_id" });
 
 export default Playlist;

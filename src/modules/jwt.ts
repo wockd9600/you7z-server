@@ -6,7 +6,7 @@ const SECRET_KEY = process.env.JWT_SECRET_KEY!;
 
 const options: SignOptions = {
     algorithm: "HS256", // 해싱 알고리즘
-    expiresIn: "10m", // 토큰 유효 기간
+    expiresIn: "60m", // 토큰 유효 기간
     issuer: "issuer", // 발행자
 };
 

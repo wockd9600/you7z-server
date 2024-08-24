@@ -52,7 +52,7 @@ Answer.init({
 }, {
     sequelize,
     tableName: 'user_answer',
-    timestamps: true,
+    timestamps: false,
 });
 
 export default Answer;
