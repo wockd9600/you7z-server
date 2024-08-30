@@ -20,18 +20,16 @@ export default class PlaylistRepository implements IPlaylistRepository {
         const includeCondition: any = [];
         const joinUserPlaylist = {
             model: UserPlaylist,
-            attributes: [[Sequelize.literal(` CASE WHEN UserPlaylists.playlist_id IS NOT NULL THEN 1 ELSE 0 END `), "downloaded"]],
+            attributes: [[Sequelize.literal(`CASE WHEN UserPlaylists.playlist_id IS NOT NULL THEN 1 ELSE 0 END `), "downloaded"]],
             where: { user_id },
             required: false, // LEFT JOIN
         };
 
         if (type === PlaylistType.MY) {
             joinUserPlaylist.required = true;
-            const cusstomJoinUserPlaylist = {
-                ...joinUserPlaylist,
-                where: { user_id: { [Op.ne]: user_id } },
-            };
-            includeCondition.push(cusstomJoinUserPlaylist);
+            whereCondition.user_id = { [Op.ne]: user_id };
+
+            includeCondition.push(joinUserPlaylist);
         } else if (type === PlaylistType.MY_WITH_CREATED) {
             joinUserPlaylist.required = true;
             includeCondition.push(joinUserPlaylist);
@@ -86,10 +84,15 @@ export default class PlaylistRepository implements IPlaylistRepository {
     }
 
     async findOnePlaylist(playlist: Playlist) {
-        const { playlist_id, user_id } = playlist;
         try {
+            const { playlist_id, user_id } = playlist;
+            const whereCondition: any = {};
+
+            if (playlist_id !== undefined) whereCondition.playlist_id = playlist_id;
+            if (user_id !== undefined) whereCondition.user_id = user_id;
+
             return await Playlist.findOne({
-                where: { playlist_id, user_id },
+                where: whereCondition,
             });
         } catch (error) {
             throw error;
@@ -97,14 +100,15 @@ export default class PlaylistRepository implements IPlaylistRepository {
     }
 
     async findOneUserPlaylist(user_playlist: UserPlaylist) {
-        const { playlist_id, user_id } = user_playlist;
-
         try {
+            const { playlist_id, user_id } = user_playlist;
+            const whereCondition: any = {};
+
+            if (playlist_id !== undefined) whereCondition.playlist_id = playlist_id;
+            if (user_id !== undefined) whereCondition.user_id = user_id;
+
             return await UserPlaylist.findOne({
-                where: {
-                    playlist_id,
-                    user_id,
-                },
+                where: whereCondition,
             });
         } catch (error) {
             throw error;

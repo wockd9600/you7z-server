@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import GameService from "../services/game";
 import GameRepository from "../repositories/implementations/game";
+import AnswerRepository from "../repositories/implementations/answer";
 import GameController from "../controllers/game";
 
 import { isLoggedIn } from "../middlewares/auth";
@@ -11,7 +12,8 @@ import { RoomInfoRequestDto } from "../dto/game";
 
 const router = Router();
 const repository = new GameRepository();
-const service = new GameService(repository);
+const answerRepository = new AnswerRepository();
+const service = new GameService(repository, answerRepository);
 const controller = new GameController(service);
 
 /* GET */

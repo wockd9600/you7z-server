@@ -3,7 +3,7 @@ import autobind from "autobind-decorator";
 
 import GameService from "../services/game";
 
-import logError from "../utils/error";
+import { logError } from "../utils/error";
 
 export default class GameController {
     constructor(private gameService: GameService) {}

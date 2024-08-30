@@ -3,7 +3,7 @@ import autobind from "autobind-decorator";
 
 import AnswerService from "../services/answer";
 
-import logError from "../utils/error";
+import { logError } from "../utils/error";
 
 export default class AnswerController {
     constructor(private answerService: AnswerService) {}

@@ -7,6 +7,7 @@ import createRedisUtil, { RedisUtil } from "../utils/redis";
 import { fetchGameRoomUsersData, createUniqueRoomCode, getGameSessionFromRoomCode } from "../helper/game";
 
 import IGameRepository from "../repositories/interfaces/game";
+import IAnswerRepository from "../repositories/interfaces/answer";
 
 import GameRoom from "../models/GameRoom";
 import Song from "../models/Song";
@@ -15,6 +16,7 @@ import Playlist from "../models/Playlist";
 import UserPlaylist from "../models/UserPlaylist";
 
 import { RoomInfoRequestDto } from "../dto/game";
+import Answer from "../models/Answer";
 
 enum GAME_STATUS {
     NOT_STARTED = 0,
@@ -24,7 +26,7 @@ enum GAME_STATUS {
 }
 
 export default class GameService {
-    constructor(private gameRepository: IGameRepository) {}
+    constructor(private gameRepository: IGameRepository, private answerRepository: IAnswerRepository) {}
 
     // @autobind
     // async verifyUserInOtherRoom(user_id: number, session_id: number) {
@@ -64,12 +66,19 @@ export default class GameService {
             const songData = new Song({ song_id: currentSongId, playlist_id: gamePlaylist.playlist_id });
             const song = currentSongId ? await this.gameRepository.findOneSong(songData) : null;
 
+            const answerData = new Answer({ session_id: gameSession.session_id });
+            const answers = await this.answerRepository.getLatestAnswers(answerData);
+
             // 게임방에 입장한 유저들 데이터 가져옴.
             const gameRoomUsersData = await fetchGameRoomUsersData(this.gameRepository, gameRedis);
 
+            const answerDtos: dto.GameAnswerDto[] = answers.map((item) => {
+                return new dto.GameAnswerDto({ ...item.dataValues });
+            });
+
             // 게임 설정, 입장한 유저들 정보를 클라이언트에 전달
             const gameSettingDto = new dto.GameSettingDto(gameSession, gamePlaylist);
-            const roomInfoResponseDto = new dto.RoomInfoResponseDto(gameSession.status, room_code, gameSettingDto, gameRoomUsersData, song);
+            const roomInfoResponseDto = new dto.RoomInfoResponseDto(gameSession.status, room_code, gameSession.user_id, gameSettingDto, gameRoomUsersData, answerDtos, song);
             return { success: true, roomData: roomInfoResponseDto };
         } catch (error) {
             throw error;
@@ -106,7 +115,7 @@ export default class GameService {
 
             // 시작한 방인지 확인함.
             if (gameSession.status === GAME_STATUS.DELETED) return { success: false, message: "존재하지 않는 방입니다." };
-            if (gameSession.status === GAME_STATUS.STARTED) return { success: false, message: "이미 시작한F 방입니다." };
+            if (gameSession.status === GAME_STATUS.STARTED) return { success: false, message: "이미 시작한 방입니다." };
 
             // (redis) 인원수 한 명 추가
             gameRedis.addUser(user_id);
@@ -123,20 +132,29 @@ export default class GameService {
 
         try {
             // user id를 전달 받고
-            // 입장 중인 방 없는지 확인
+            // 입장 중인 방이 있으면 나감.
             const session_id = await RedisUtil.getUserOtherSessionId(user_id);
             if (session_id) {
-                //     const isEnter = await this.verifyUserInOtherRoom(user_id, session_id);
-                //     if (isEnter.success === false) {
-                //         return {
-                //             success: false,
-                //             message: "사용자가 이미 다른 방에 있습니다.",
-                //             room_code: isEnter.room_code,
-                //         };
-                //     }
-                // 입장 중이던 방에서 나감.
+                // redis 삭제
                 const gameRedis = await createRedisUtil(session_id);
                 gameRedis.deleteUser(user_id);
+
+                // 게임 세션 확인
+                const gameSessionData = new GameSession({ session_id });
+                const gameSession = await this.gameRepository.findOneGameSession(gameSessionData);
+                if (gameSession === null) throw new Error("invalid game session id");
+                
+                const gameRoomData = new GameRoom({ room_id: gameSession.room_id });
+                const gameRoom = await this.gameRepository.findOneGameRoom(gameRoomData);
+
+                // 삭제된 방은 검색하지 않음. ( reulst: null)
+                if (gameRoom !== null) {
+                    // 방장이면 방 제거
+                    if (gameSession.user_id === user_id) {
+                        gameRoomData.status = 1;
+                        await this.gameRepository.updateGameRoom(gameRoomData);
+                    }
+                }
             }
 
             // create room, gamesession 생성
@@ -163,7 +181,6 @@ export default class GameService {
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
             gameRedis.addUser(user_id);
-            gameRedis.setRoomManager(user_id);
 
             // const playlistData = new Playlist({ playlist_id: gameSession.playlist_id });
             // const gamePlaylist = await this.gameRepository.findOnePlayList(playlistData);

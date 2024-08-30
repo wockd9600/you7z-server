@@ -123,7 +123,8 @@ export default class GameRepository implements IGameRepository {
     async updateGameRoom(gameRoomData: GameRoom) {
         const { room_id, status } = gameRoomData;
 
-        const updateData: any = { status };
+        const updateData: any = {};
+        if (status !== undefined) updateData.status = status;
 
         try {
             await GameSession.update(updateData, {
@@ -135,15 +136,16 @@ export default class GameRepository implements IGameRepository {
     }
 
     async updateGameSession(gameRoomData: GameSession, transaction: Transaction) {
-        const { status, session_id, game_type, goal_score, playlist_id } = gameRoomData;
-
-        const updateData: any = { status };
-
-        if (game_type !== undefined) updateData.game_type = game_type;
-        if (goal_score !== undefined) updateData.goal_score = goal_score;
-        if (playlist_id !== undefined) updateData.playlist_id = playlist_id;
-
         try {
+            const { status, session_id, user_id, game_type, goal_score, playlist_id } = gameRoomData;
+            const updateData: any = {};
+
+            if (status !== undefined) updateData.status = status;
+            if (user_id !== undefined) updateData.user_id = user_id;
+            if (game_type !== undefined) updateData.game_type = game_type;
+            if (goal_score !== undefined) updateData.goal_score = goal_score;
+            if (playlist_id !== undefined) updateData.playlist_id = playlist_id;
+
             await GameSession.update(updateData, {
                 where: { session_id },
                 transaction,

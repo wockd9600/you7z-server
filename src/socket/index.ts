@@ -18,6 +18,7 @@ export default function initializeSocket(app: Application): http.Server {
     const ns = io.of("/");
     import("./ns")
         .then((socketHandler) => {
+            console.log("connect");
             socketHandler.default(ns);
         })
         .catch((error) => {

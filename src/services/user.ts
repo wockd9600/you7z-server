@@ -111,6 +111,7 @@ export default class UserService {
             loginResponseDto.access_token = access_token;
             loginResponseDto.refresh_token = userData.refresh_token;
             loginResponseDto.nickname = userProfileData.nickname;
+            loginResponseDto.userId = user.user_id;
 
             await transaction.commit();
 

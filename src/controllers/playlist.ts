@@ -3,7 +3,7 @@ import autobind from "autobind-decorator";
 
 import PlaylistService from "../services/playlist";
 
-import logError from "../utils/error";
+import { logError } from "../utils/error";
 
 export default class PlaylistController {
     constructor(private playlistService: PlaylistService) {}

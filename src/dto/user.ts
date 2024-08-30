@@ -37,9 +37,14 @@ export class LoginRequestDto {
 
 export class LoginResponseDto extends AuthTokenDto {
     @Expose()
-    @IsOptional()
+    @IsNotEmpty()
     @IsString()
-    nickname?: string;
+    nickname: string;
+
+    @Expose()
+    @IsNotEmpty()
+    @IsNumber()
+    userId: number;
 }
 
 export class RefreshRequestDto extends AuthTokenDto {}

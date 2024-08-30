@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { validateOrReject, ValidationError } from "class-validator";
 import { plainToClass } from "class-transformer";
-import logError from "../utils/error";
+import { logError } from "../utils/error";
 
 export function validateBody(schema: any) {
     return async function (req: Request, res: Response, next: NextFunction) {

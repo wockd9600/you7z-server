@@ -115,17 +115,6 @@ export class RedisUtil {
         return results.every((agreed) => agreed);
     }
 
-    public async getRoomMangerId(): Promise<number | null> {
-        try {
-            const userKey = `session:${this.session_id}:manager`;
-            const manager_id = await redisClient.get(userKey);
-
-            return manager_id ? parseInt(manager_id, 10) : 0;
-        } catch (error) {
-            throw error;
-        }
-    }
-
     public async getCurrentSongId(): Promise<number> {
         // 현재 노래 가져오기 "session:{session_id}:song"
         try {
@@ -133,6 +122,18 @@ export class RedisUtil {
             const somg_id = await redisClient.get(song_key);
 
             return somg_id ? parseInt(somg_id, 10) : 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    public async getPossibleAnswer(): Promise<boolean> {
+        // 현재 노래 가져오기 "session:{session_id}:song"
+        try {
+            const possible_key = `session:${this.session_id}:possible`;
+            const isPossible = await redisClient.get(possible_key);
+
+            return isPossible === "true";
         } catch (error) {
             throw error;
         }
@@ -148,11 +149,9 @@ export class RedisUtil {
             this.users.sort((a, b) => a.order - b.order);
 
             let order = 0;
-            for (let i = 0; i < this.users.length; i++) {
-                if (this.users[i].order !== i) {
-                    order = i;
-                    break;
-                }
+            if (this.users.length !== 0) {
+                const index = this.users.length - 1;
+                order = this.users[index].order + 1;
             }
 
             const userKey = `session:${this.session_id}:user:${user_id}`;
@@ -191,39 +190,24 @@ export class RedisUtil {
         }
     }
 
-    public async setRoomManager(user_id: number): Promise<void> {
-        try {
-            // 유저가 방장인지 확인 index:0이면 방장
-            const userKey = `session:${this.session_id}:manager`;
-            await redisClient.set(userKey, user_id.toString(), { EX: 60 * 60 });
-        } catch (error) {
-            throw error;
-        }
-    }
-
     public async setCurrentSongId(song_id: number): Promise<void> {
         // 현재 노래 설정 "session:{session_id}:song"
         const song_key = `session:${this.session_id}:song`;
         await redisClient.set(song_key, song_id.toString(), { EX: 60 * 5 });
     }
 
+    public async setPossibleAnswer(value: boolean): Promise<void> {
+        const possible_key = `session:${this.session_id}:possible`;
+        await redisClient.set(possible_key, value.toString(), { EX: 60 * 60 });
+    }
+
     // delete
     public async deleteRoom(user_id: number) {
         try {
-            this.deleteRoomManger();
             this.resetAgreeNextAction();
             this.deleteUser(user_id);
             this.deleteSong();
             this.deleteUserScore(user_id);
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    public async deleteRoomManger(): Promise<void> {
-        try {
-            const userKey = `session:${this.session_id}:manager`;
-            await redisClient.del(userKey);
         } catch (error) {
             throw error;
         }

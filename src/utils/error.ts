@@ -1,7 +1,8 @@
 import { Request } from "express";
 import logger from "../config/logger";
+import { Socket } from "socket.io";
 
-export default function logError(error: Error, req: Request) {
+export function logError(error: Error, req: Request) {
     // Structured logging to capture useful information
     console.log(error);
     logger.error({
@@ -11,5 +12,20 @@ export default function logError(error: Error, req: Request) {
         url: req.originalUrl,
         stack: error.stack,
         clientIp: req.ip,
+    });
+}
+
+export function logErrorSocket(error: Error, socket: Socket, params: any) {
+    // Structured logging to capture useful information
+    const clientIp = socket.handshake.headers["x-forwarded-for"] || socket.handshake.address;
+    const url = params.event;
+    console.log(error);
+    logger.error({
+        message: error.message,
+        method: "",
+        user_id: socket.data.userId || -1,
+        url,
+        stack: error.stack,
+        clientIp,
     });
 }

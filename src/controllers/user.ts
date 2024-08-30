@@ -3,7 +3,7 @@ import autobind from "autobind-decorator";
 
 import UserService from "../services/user";
 
-import logError from "../utils/error";
+import { logError } from "../utils/error";
 import { LoginRequestDto } from "../dto/user";
 
 export default class UserController {

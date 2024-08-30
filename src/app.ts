@@ -6,7 +6,7 @@ import "reflect-metadata";
 // import { sequelize } from "./modules/sequelize";
 // import RedisStore from "connect-redis"
 
-import logError from "./utils/error";
+import { logError } from "./utils/error";
 import morganMiddleware from "./middlewares/morgan";
 
 import initializeSocket from "./socket";

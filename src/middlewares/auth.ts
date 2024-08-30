@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "../modules/jwt";
-import logError from "../utils/error";
+import { logError } from "../utils/error";
 
 const isLoggedIn = async (req: Request, res: Response, next: NextFunction) => {
     let token = null;
