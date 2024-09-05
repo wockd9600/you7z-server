@@ -68,11 +68,11 @@ export class RedisUtil {
         return result;
     }
 
-    public checkUserCount(): boolean {
+    public checkUserCount(min: number): boolean {
         // 인원수 문제 없는지 확인
         // 현재 유저들 가져옴
         // 1 < length < 8
-        return this.users.length >= 1 && this.users.length <= 8;
+        return this.users.length >= min && this.users.length <= 8;
     }
 
     // get
@@ -122,6 +122,18 @@ export class RedisUtil {
             const somg_id = await redisClient.get(song_key);
 
             return somg_id ? parseInt(somg_id, 10) : 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    public async getAnswerUserId(): Promise<number> {
+        // 현재 노래 가져오기 "session:{session_id}:song"
+        try {
+            const answer_key = `session:${this.session_id}:answer`;
+            const answer_user_id = await redisClient.get(answer_key);
+
+            return answer_user_id ? parseInt(answer_user_id, 10) : 0;
         } catch (error) {
             throw error;
         }
@@ -193,7 +205,13 @@ export class RedisUtil {
     public async setCurrentSongId(song_id: number): Promise<void> {
         // 현재 노래 설정 "session:{session_id}:song"
         const song_key = `session:${this.session_id}:song`;
-        await redisClient.set(song_key, song_id.toString(), { EX: 60 * 5 });
+        await redisClient.set(song_key, song_id.toString(), { EX: 60 * 10 });
+    }
+
+    public async setAnswerUserId(answer_user_id: number): Promise<void> {
+        // 현재 노래 설정 "session:{session_id}:song"
+        const answer_key = `session:${this.session_id}:answer`;
+        await redisClient.set(answer_key, answer_user_id.toString(), { EX: 60 * 10 });
     }
 
     public async setPossibleAnswer(value: boolean): Promise<void> {

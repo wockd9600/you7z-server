@@ -6,7 +6,7 @@ import User from "./User";
 
 class GameSession extends Model {
     public session_id!: number;
-    public room_id!: string;
+    public room_id!: number;
     public user_id!: number;
     public playlist_id!: number;
     public question_order!: string;

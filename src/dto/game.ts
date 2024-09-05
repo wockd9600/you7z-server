@@ -2,21 +2,39 @@ import { IsNotEmpty, IsOptional, IsString, Length } from "class-validator";
 import { Expose } from "class-transformer";
 
 import GameSession from "../models/GameSession";
-import Song from "../models/Song";
 import Playlist from "../models/Playlist";
 import Answer from "../models/Answer";
 
-export class UserNicknameAndScore {
+export class GameUserDto {
     userId: number;
     nickname: string;
     order: number;
     score: number;
+    isReady: boolean;
 
-    constructor(id: number, nickname: string, order: number, score: number) {
-        this.userId = id;
+    constructor(data: { userId: number; nickname: string; order: number; score: number }) {
+        const { userId, nickname, order, score } = data;
+
+        this.userId = userId;
         this.order = order;
         this.nickname = nickname;
         this.score = score;
+        this.isReady = false;
+    }
+}
+
+export class GameSongDto {
+    id: number;
+    url: string;
+    startTime: string;
+    description: string;
+
+    constructor(data: { song_id: number; url: string; start_time: string; description: string }) {
+        const { song_id, url, start_time, description } = data;
+        this.id = song_id;
+        this.url = url;
+        this.startTime = start_time;
+        this.description = description;
     }
 }
 
@@ -45,6 +63,17 @@ export class GameAnswerDto {
     }
 }
 
+export class GamePlaylistDto {
+    title: string;
+    description: string;
+
+    constructor(data: { title: string; description: string }) {
+        const { title, description } = data;
+        this.title = title;
+        this.description = description;
+    }
+}
+
 class RoomInfo {
     @IsNotEmpty()
     public status: number;
@@ -59,22 +88,18 @@ class RoomInfo {
     public gameSetting: GameSettingDto;
 
     @IsNotEmpty()
-    public users: UserNicknameAndScore[];
+    public users: GameUserDto[];
 
     @IsOptional()
     public answers: GameAnswerDto[];
 
-    @IsOptional()
-    public song: Song | null;
-
-    constructor(status: number, roomCode: string, managerId: number, gameSetting: GameSettingDto, gameUsers: UserNicknameAndScore[], answers: GameAnswerDto[], song: Song | null) {
+    constructor(status: number, roomCode: string, managerId: number, gameSetting: GameSettingDto, gameUsers: GameUserDto[], answers: GameAnswerDto[]) {
         this.status = status;
         this.roomCode = roomCode;
         this.managerId = managerId;
         this.gameSetting = gameSetting;
         this.users = gameUsers;
         this.answers = answers;
-        this.song = song;
     }
 }
 

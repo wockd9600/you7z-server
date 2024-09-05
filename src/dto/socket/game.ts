@@ -38,28 +38,3 @@ export class ChangeUserNameRequestDto {
 }
 // export class CreateRoomResponseDto extends RoomInfo {}
 
-export class GameSongDto {
-    id: number;
-    url: string;
-    startTime: string;
-    description: string;
-
-    constructor(data: { song_id: number; url: string; start_time: string; description: string }) {
-        const { song_id, url, start_time, description } = data;
-        this.id = song_id;
-        this.url = url;
-        this.startTime = start_time;
-        this.description = description;
-    }
-}
-
-export class GamePlaylistDto {
-    title: string;
-    description: string;
-
-    constructor(data: { title: string; description: string }) {
-        const { title, description } = data;
-        this.title = title;
-        this.description = description;
-    }
-}

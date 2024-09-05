@@ -12,11 +12,11 @@ import UserPlaylist from "../../models/UserPlaylist";
 
 export default class GameRepository implements IGameRepository {
     async findOneGameRoom(gameRoomData: GameRoom) {
-        const { room_code } = gameRoomData;
+        const { room_id, room_code } = gameRoomData;
 
         try {
             return await GameRoom.findOne({
-                where: { room_code, status: 0 },
+                where: { [Op.or]: [{ room_id }, { room_code }], status: 0 },
                 order: [["created_at", "DESC"]],
             });
         } catch (error) {
@@ -137,7 +137,7 @@ export default class GameRepository implements IGameRepository {
 
     async updateGameSession(gameRoomData: GameSession, transaction: Transaction) {
         try {
-            const { status, session_id, user_id, game_type, goal_score, playlist_id } = gameRoomData;
+            const { status, session_id, user_id, game_type, goal_score, playlist_id, question_order } = gameRoomData;
             const updateData: any = {};
 
             if (status !== undefined) updateData.status = status;
@@ -145,6 +145,7 @@ export default class GameRepository implements IGameRepository {
             if (game_type !== undefined) updateData.game_type = game_type;
             if (goal_score !== undefined) updateData.goal_score = goal_score;
             if (playlist_id !== undefined) updateData.playlist_id = playlist_id;
+            if (question_order !== undefined) updateData.question_order = question_order;
 
             await GameSession.update(updateData, {
                 where: { session_id },

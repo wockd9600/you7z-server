@@ -13,6 +13,8 @@ import UserRepository from "../repositories/implementations/user";
 import GameController from "../controllers/socket/game";
 import AnswerController from "../controllers/socket/answer";
 
+import logger from "../config/logger";
+import { logErrorSocket } from "../utils/error";
 import { UserKickRequestDto, ChangeGameSettingRequestDto, ChangeUserNameRequestDto } from "../dto/socket/game";
 
 const gameRepository = new GameRepository();
@@ -23,6 +25,44 @@ const answerRepository = new AnswerRepository();
 const gameController = new GameController(gameRepository, playlistRepository, userRepository, answerRepository);
 const answerController = new AnswerController(answerRepository, gameRepository);
 
+class CustomValidationError extends Error {
+    validationErrors: ValidationError[];
+
+    constructor(validationErrors: ValidationError[]) {
+        const message = validationErrors.map((e) => `Property ${e.property}: ${Object.values(e.constraints || {}).join(", ")}`).join("; ");
+
+        super(message);
+        this.name = "CustomValidationError";
+        this.validationErrors = validationErrors;
+
+        // Maintains proper stack trace for where our error was thrown (only available on V8)
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, CustomValidationError);
+        }
+    }
+}
+
+export class RoomTimer {
+    public static timers: { [roomCode: string]: NodeJS.Timeout } = {};
+
+    public static startTimer(roomCode: string, duration: number, callback: () => void) {
+        if (RoomTimer.timers[roomCode]) {
+            clearTimeout(RoomTimer.timers[roomCode]); // 기존 타이머가 있으면 제거
+        }
+        RoomTimer.timers[roomCode] = setTimeout(() => {
+            callback();
+            delete RoomTimer.timers[roomCode]; // 타이머 종료 후 제거
+        }, duration);
+    }
+
+    public static clearTimer(roomCode: string) {
+        if (RoomTimer.timers[roomCode]) {
+            clearTimeout(RoomTimer.timers[roomCode]);
+            delete RoomTimer.timers[roomCode];
+        }
+    }
+}
+
 export default function initializeNamespace(io: Namespace) {
     async function validateParams(schema: any, params: any): Promise<any> {
         try {
@@ -32,17 +72,7 @@ export default function initializeNamespace(io: Namespace) {
             return target;
         } catch (error) {
             if (Array.isArray(error) && error.every((e) => e instanceof ValidationError)) {
-                const validationErrors = error
-                    .map((e) => {
-                        const constraints = Object.values(e.constraints || {}).join(", ");
-                        return `Property ${e.property}: ${constraints}`;
-                    })
-                    .join("; ");
-
-                const validateError = new Error(validationErrors);
-                validateError.name = "ValidationError";
-                validateError.stack = "ValidationError";
-                throw validateError;
+                throw new CustomValidationError(error);
             } else {
                 throw error;
             }
@@ -51,6 +81,9 @@ export default function initializeNamespace(io: Namespace) {
 
     async function eventMiddleware(params: any, socket: Socket, next: Function, schema?: any | undefined) {
         try {
+            // console.log(params);
+            // logger.info(`socket on ${params}`);
+
             if (schema) await validateParams(schema, params);
 
             const { token } = params;
@@ -66,8 +99,8 @@ export default function initializeNamespace(io: Namespace) {
 
             // *수정 log
         } catch (error) {
-            console.log(error);
-            if (error instanceof ValidationError) {
+            if (error instanceof CustomValidationError) {
+                logErrorSocket(error, socket, params);
                 socket.emit("validation error", error);
             } else if (error instanceof Error) {
                 if (error.message === "jwt expired") {

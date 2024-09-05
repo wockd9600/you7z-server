@@ -65,7 +65,7 @@ export default class GameService {
             const currentSongId = await gameRedis.getCurrentSongId();
             const songData = new Song({ song_id: currentSongId, playlist_id: gamePlaylist.playlist_id });
             const song = currentSongId ? await this.gameRepository.findOneSong(songData) : null;
-
+            
             const answerData = new Answer({ session_id: gameSession.session_id });
             const answers = await this.answerRepository.getLatestAnswers(answerData);
 
@@ -78,8 +78,13 @@ export default class GameService {
 
             // 게임 설정, 입장한 유저들 정보를 클라이언트에 전달
             const gameSettingDto = new dto.GameSettingDto(gameSession, gamePlaylist);
-            const roomInfoResponseDto = new dto.RoomInfoResponseDto(gameSession.status, room_code, gameSession.user_id, gameSettingDto, gameRoomUsersData, answerDtos, song);
-            return { success: true, roomData: roomInfoResponseDto };
+            const gmaeUsersDto = gameRoomUsersData.map((user) => new dto.GameUserDto({ ...user }));
+            const roomInfoResponseDto = new dto.RoomInfoResponseDto(gameSession.status, room_code, gameSession.user_id, gameSettingDto, gmaeUsersDto, answerDtos);
+
+            let gameSongDto;
+            if (song) gameSongDto = new dto.GameSongDto({ ...song.dataValues });
+
+            return { success: true, roomData: roomInfoResponseDto, gameSongDto };
         } catch (error) {
             throw error;
         }
@@ -111,7 +116,7 @@ export default class GameService {
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
             // (redis) 인원수 문제 없는지 확인
-            if (!gameRedis.checkUserCount()) return { success: false, message: "인원이 가득찬 방입니다." };
+            if (!gameRedis.checkUserCount(0)) return { success: false, message: "인원이 가득찬 방입니다." };
 
             // 시작한 방인지 확인함.
             if (gameSession.status === GAME_STATUS.DELETED) return { success: false, message: "존재하지 않는 방입니다." };
@@ -134,17 +139,18 @@ export default class GameService {
             // user id를 전달 받고
             // 입장 중인 방이 있으면 나감.
             const session_id = await RedisUtil.getUserOtherSessionId(user_id);
-            if (session_id) {
+
+            if (session_id !== -1) {
                 // redis 삭제
                 const gameRedis = await createRedisUtil(session_id);
                 gameRedis.deleteUser(user_id);
 
                 // 게임 세션 확인
-                const gameSessionData = new GameSession({ session_id });
+                const gameSessionData = new GameSession({ room_id: null, session_id });
                 const gameSession = await this.gameRepository.findOneGameSession(gameSessionData);
                 if (gameSession === null) throw new Error("invalid game session id");
-                
-                const gameRoomData = new GameRoom({ room_id: gameSession.room_id });
+
+                const gameRoomData = new GameRoom({ room_id: gameSession.room_id, room_code: null });
                 const gameRoom = await this.gameRepository.findOneGameRoom(gameRoomData);
 
                 // 삭제된 방은 검색하지 않음. ( reulst: null)

@@ -5,6 +5,8 @@ import { sequelize } from "../../modules/sequelize";
 
 import createRedisUtil from "../../utils/redis";
 import { generateRandomOrder, getGameSessionFromRoomCode } from "../../helper/game";
+import { RoomTimer } from "../../socket/ns";
+
 
 import GameRepository from "../../repositories/interfaces/game";
 import PlaylistRepository from "../../repositories/implementations/playlist";
@@ -20,32 +22,12 @@ import Answer from "../../models/Answer";
 import User from "../../models/User";
 
 import { logErrorSocket } from "../../utils/error";
-import { GameAnswerDto } from "../../dto/game";
-import { GamePlaylistDto, GameSongDto } from "../../dto/socket/game";
+import { GameAnswerDto, GameSongDto, GamePlaylistDto } from "../../dto/game";
 
 // jwt 확인
 
 export default class GameController {
-    private timers: { [roomCode: string]: NodeJS.Timeout } = {};
-
     constructor(private gameRepository: GameRepository, private playlistRepository: PlaylistRepository, private userRepository: UserRepository, private answerRepository: AnswerRepository) {}
-
-    private startTimer(roomCode: string, duration: number, callback: () => void) {
-        if (this.timers[roomCode]) {
-            clearTimeout(this.timers[roomCode]); // 기존 타이머가 있으면 제거
-        }
-        this.timers[roomCode] = setTimeout(() => {
-            callback();
-            delete this.timers[roomCode]; // 타이머 종료 후 제거
-        }, duration);
-    }
-
-    private clearTimer(roomCode: string) {
-        if (this.timers[roomCode]) {
-            clearTimeout(this.timers[roomCode]);
-            delete this.timers[roomCode];
-        }
-    }
 
     async alertAnswer(data: { session_id: number; user_id?: number; answer_user_id: number; message: string }) {
         const { session_id, user_id, answer_user_id, message } = data;
@@ -58,7 +40,7 @@ export default class GameController {
             name = userProfile.nickname;
         }
 
-        const answerData = new Answer({ session_id, user_id: answer_user_id, content: `${name}${message}`, is_alert: true });
+        const answerData = new Answer({ session_id, user_id: answer_user_id, content: `${name}${message}`, is_alert: 1 });
         const answer = await this.answerRepository.createAnswer(answerData);
         const answerDto = new GameAnswerDto({ ...answer.dataValues });
 
@@ -82,7 +64,7 @@ export default class GameController {
             if (!gameRedis.isUserInRoom(userId)) throw new Error("don't exist user in room");
 
             // (redis) 인원수 문제 없는지 확인
-            if (!gameRedis.checkUserCount()) throw new Error("인원이 너무 적습니다.");
+            if (!gameRedis.checkUserCount(2)) throw new Error("인원이 너무 적습니다.");
 
             // session 테이블의 playlist id로 플레이리스트 가져옴.
             const playlistData = new Playlist({ playlist_id: gameSession.playlist_id });
@@ -95,9 +77,9 @@ export default class GameController {
 
             // 랜덤으로 순서를 전부 뽑는다.
             const question_order = generateRandomOrder(songs, gameSession.goal_score);
-
+            console.log(question_order);
             // (redis) 현재 노래 설정
-            const current_song_id = question_order[0].song_id;
+            const current_song_id = question_order[0];
             gameRedis.setCurrentSongId(current_song_id);
 
             // 노래 url을 방에 있는 사람에게 전부 전달 emit
@@ -112,13 +94,17 @@ export default class GameController {
 
             await transaction.commit();
 
-            const gmaePlaylistData = new GamePlaylistDto({ ...playlist });
-            const gmaeSongData = new GameSongDto({ ...song });
+            const [hours, minutes, seconds] = song.start_time.split(":").map(Number);
+            const start_time = hours * 3600 + minutes * 60 + seconds;
+
+            const gmaePlaylistData = new GamePlaylistDto({ ...playlist.dataValues });
+            const gmaeSongData = new GameSongDto({ ...song.dataValues, start_time });
 
             io.to(roomCode).emit("game start", { gmaeSongData, gmaePlaylistData });
 
-            const playSongTimer = async (retryCount = 0, maxRetries = 10) => {
+            const playSongTimer = async (retryCount = 0, maxRetries = 30) => {
                 try {
+                    console.log(retryCount);
                     const isAllAgree = await gameRedis.isALLAgreeNextAction();
                     if (isAllAgree) {
                         gameRedis.resetAgreeNextAction();
@@ -133,8 +119,10 @@ export default class GameController {
                         // });
                     } else {
                         if (retryCount < maxRetries) {
-                            this.startTimer(roomCode, 1000, () => playSongTimer(retryCount + 1, maxRetries));
+                            RoomTimer.startTimer(roomCode, 1000, () => playSongTimer(retryCount + 1, maxRetries));
                         } else {
+                            const gameRoomData = new GameSession({ session_id: gameSession.session_id, status: 0, question_order: null });
+                            await this.gameRepository.updateGameSession(gameRoomData);
                             throw new Error("노래 재생 요청 횟수 초과");
                         }
                     }
@@ -148,9 +136,9 @@ export default class GameController {
                 }
             };
 
-            this.startTimer(roomCode, 5000, playSongTimer);
+            RoomTimer.startTimer(roomCode, 6000, playSongTimer);
         } catch (error) {
-            await transaction.rollback();
+            if (transaction) await transaction.rollback();
             let message = "알 수 없는 이유로 게임을 시작할 수 없습니다.";
             if (error instanceof Error) {
                 logErrorSocket(error, socket, params);
@@ -160,37 +148,38 @@ export default class GameController {
         }
     }
 
-    // @autobind
-    // async getSong(io: Namespace, socket: Socket, params: any) {
-    //     // room_code로 session_table row 가져옴
-    //     try {
-    //         const { userId, roomCode } = socket.data;
+    @autobind
+    async getSong(io: Namespace, socket: Socket, params: any) {
+        // room_code로 session_table row 가져옴
+        try {
+            const { userId, roomCode } = socket.data;
 
-    //         // room_code로 session_table row 가져옴
-    //         const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
-    //         if (gameSession.status === 0) throw new Error("not started yet");
+            // room_code로 session_table row 가져옴
+            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (gameSession.status === 0) throw new Error("not started yet");
 
-    //         const gameRedis = await createRedisUtil(gameSession.session_id);
-    //         if (!gameRedis.isUserInRoom(userId)) throw new Error("don't exist user in room");
+            const gameRedis = await createRedisUtil(gameSession.session_id);
+            if (!gameRedis.isUserInRoom(userId)) throw new Error("don't exist user in room");
 
-    //         const current_song_id = gameRedis.getCurrentSongId();
+            const current_song_id = gameRedis.getCurrentSongId();
 
-    //         // 노래 url을 방에 있는 사람에게 전부 전달 emit
-    //         const songData = new Song({ song_id: current_song_id });
-    //         const song = await this.gameRepository.findOneSong(songData);
-    //         if (song === null) throw new Error("not song");
+            // 노래 url을 방에 있는 사람에게 전부 전달 emit
+            const songData = new Song({ song_id: current_song_id });
+            const song = await this.gameRepository.findOneSong(songData);
+            if (song === null) throw new Error("not song");
 
-    //         const responseData = new GameSongDto({ ...song });
-    //         socket.emit("get song", responseData);
-    //     } catch (error) {
-    //         let message = "노래를 재생할 수 없습니다.";
-    //         if (error instanceof Error) {
-    //             logErrorSocket(error, socket, params);
-    //             message = error.message;
-    //         }
-    //         socket.emit("error", { status: 401, message });
-    //     }
-    // }
+            const responseData = new GameSongDto({ ...song });
+            socket.emit("get song", responseData);
+            
+        } catch (error) {
+            let message = "노래를 재생할 수 없습니다.";
+            if (error instanceof Error) {
+                logErrorSocket(error, socket, params);
+                message = error.message;
+            }
+            socket.emit("error", { status: 401, message });
+        }
+    }
 
     @autobind
     async readySong(io: Namespace, socket: Socket, params: any) {
@@ -213,10 +202,11 @@ export default class GameController {
                 // 준비 완료!
                 // 가능한 유저 id
                 // 여기서 시간 안에 재생 안 하면 자동으로 재생하게 해야해
-                io.to(roomCode).emit("all ready song");
+                const answer_user_id = await gameRedis.getAnswerUserId();
+                io.to(roomCode).emit("all ready song", answer_user_id);
             } else {
                 // --- (redis) 유저들의 동영상 로딩이 전부 준비 되지 않으면 ---
-                io.to(roomCode).emit("ready song");
+                io.to(roomCode).emit("ready song", userId);
             }
         } catch (error) {
             let message = "노래를 재생할 수 없습니다.";
@@ -311,7 +301,7 @@ export default class GameController {
             const userProfile = await this.userRepository.findOneUserProfile(userProfileData);
             if (userProfile === null) throw new Error("don't exist user profile");
 
-            const responseData = { ...user, nickname: userProfile.nickname, score: 0 };
+            const responseData = { id: user.user_id, userId, nickname: userProfile.nickname, score: 0 };
             io.to(roomCode).emit("join user", responseData);
         } catch (error) {
             let message = "접속할 수 없습니다.";
