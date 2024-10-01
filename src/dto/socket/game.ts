@@ -25,7 +25,7 @@ export class ChangeGameSettingRequestDto {
     @Expose()
     @IsNotEmpty()
     @IsNumber()
-    @IsIn([5, 10, 15, 20], { message: "targetScore must be one of 5, 10, 15, 20." })
+    @IsIn([5, 10, 15, 20, 255], { message: "targetScore must be one of 5, 10, 15, 20, 255." })
     public targetScore: number;
 }
 
@@ -36,5 +36,6 @@ export class ChangeUserNameRequestDto {
     @Length(0, 10)
     public name: string;
 }
+
 // export class CreateRoomResponseDto extends RoomInfo {}
 

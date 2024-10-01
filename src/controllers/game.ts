@@ -37,8 +37,12 @@ export default class GameController {
 
             res.status(200).json(result);
         } catch (error) {
-            if (error instanceof Error) logError(error, req);
-            return res.status(500).json({ message: "입장할 수 없는 방입니다." });
+            let message = "입장할 수 없는 방입니다.";
+            if (error instanceof Error) {
+                message = error.message;
+                logError(error, req);
+            }
+            return res.status(500).json({ message });
         }
     }
 
@@ -56,8 +60,12 @@ export default class GameController {
                 res.status(200).json(result);
             }
         } catch (error) {
-            if (error instanceof Error) logError(error, req);
-            return res.status(500).json({ message: "방을 만들 수 없습니다. 잠시 후 다시 시도해 주세요." });
+            let message = "방을 만들 수 없습니다. 잠시 후 다시 시도해 주세요.";
+            if (error instanceof Error) {
+                message = error.message;
+                logError(error, req);
+            }
+            return res.status(500).json({ message });
         }
     }
 

@@ -4,7 +4,7 @@ import { Socket } from "socket.io";
 declare global {
     namespace Express {
         interface Request {
-            user?: { user_id: number };
+            user: { user_id: number };
             dto?: any;
         }
     }

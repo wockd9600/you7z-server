@@ -137,10 +137,11 @@ export default class UserService {
         const { refresh_token } = refreshDto;
 
         try {
-            const toekn_user = (await jwt.decode(access_token)) as JwtPayload;
-            if (!toekn_user || typeof toekn_user === "string") throw new Error("토큰 사용자 없음");
 
-            const userData = new User({ user_id: toekn_user.user_id });
+            const decoded = jwt.decode(access_token) as JwtPayload;
+            if (typeof decoded !== "object" || decoded === null || !("id" in decoded)) throw new Error("토큰 사용자 없음");
+
+            const userData = new User({ user_id: decoded.id });
             const user = await this.userRepository.findOneUser(userData);
             if (user === null) throw new Error("DB 사용자 없음");
 

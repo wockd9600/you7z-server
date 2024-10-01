@@ -49,13 +49,15 @@ export default class PlaylistController {
     //     }
     // }
 
+    
+
     @autobind
     async postStorePlaylist(req: Request, res: Response) {
         // 저장한 playlist 인지 확인
         // user id와 playlist id로 저장
 
         try {
-            const user_id = req.user!.user_id;
+            const user_id = req.user.user_id;
 
             const storeRequestDto = req.dto;
             const storeResponseDto = await this.playlistService.storePlaylist(storeRequestDto, user_id);

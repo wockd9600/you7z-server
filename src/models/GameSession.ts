@@ -60,13 +60,13 @@ GameSession.init(
             },
         },
         goal_score: {
-            type: DataTypes.TINYINT,
+            type: DataTypes.TINYINT.UNSIGNED,
             allowNull: false,
             validate: {
-                max: 20,
+                max: 255,
                 min: 5,
             },
-            defaultValue: 10,
+            defaultValue: 255,
         },
         status: {
             type: DataTypes.TINYINT,

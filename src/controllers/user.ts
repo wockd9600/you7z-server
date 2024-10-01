@@ -52,7 +52,15 @@ export default class UserController {
     async refresh(req: Request, res: Response) {
         // 전달된 토큰에서 id를 추출
         // 토큰 재발급 로직
-        const access_token = (req.headers as { access_token: string }).access_token;
+        let access_token;
+        if (req.headers) {
+            access_token = req.headers.authorization && req.headers.authorization.split(" ")[1];
+        }
+
+        // 토큰이 없는 경우
+        if (!access_token) {
+            return res.status(419).json({ message: "로그인 정보가 없습니다. 로그인 해주세요." });
+        }
 
         try {
             const refreshRequestDto = req.dto;

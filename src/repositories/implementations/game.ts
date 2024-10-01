@@ -111,10 +111,10 @@ export default class GameRepository implements IGameRepository {
     }
 
     async createGameSession(gameRoomData: GameSession, transaction: Transaction) {
-        const { room_id, playlist_id, user_id } = gameRoomData;
+        // const { room_id, playlist_id, user_id } = gameRoomData;
 
         try {
-            return await GameSession.create({ room_id, user_id, playlist_id }, { transaction });
+            return await GameSession.create({ ...gameRoomData.dataValues }, { transaction });
         } catch (error) {
             throw error;
         }

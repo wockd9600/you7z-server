@@ -4,9 +4,8 @@ import autobind from "autobind-decorator";
 import { sequelize } from "../../modules/sequelize";
 
 import createRedisUtil from "../../utils/redis";
-import { generateRandomOrder, getGameSessionFromRoomCode } from "../../helper/game";
-import { RoomTimer } from "../../socket/ns";
-
+import { generateRandomOrder, getGameSessionFromRoomCode, showAnswerAndNextSong } from "../../helper/game";
+import { RoomTimer, UserTimer } from "../../utils/timer";
 
 import GameRepository from "../../repositories/interfaces/game";
 import PlaylistRepository from "../../repositories/implementations/playlist";
@@ -48,6 +47,69 @@ export default class GameController {
     }
 
     @autobind
+    async disconnect(io: Namespace, socket: Socket) {
+        const { userId, roomCode } = socket.data;
+
+        if (roomCode === undefined || userId === undefined) return;
+
+        try {
+            const { gameRoom, gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const gameRedis = await createRedisUtil(gameSession.session_id);
+
+            // 게임 불가능한 유저일 경우 연결 끊김으로 처리하지 않음.
+            if (!gameRedis.isUserInRoom(userId)) return;
+
+            // 게임이 끝났으면 처리x
+            // 게임 끝났을 때 코드가 없네?
+            // if (gameSession.status === 1)
+
+            const leaveGameTimeout = async () => {
+                // 게임이 시작되었을 때
+                if (gameSession.status === 1) {
+                    // 연결 끊김 처리
+                    // status 변경
+                    await gameRedis.setUserStatus(userId, -1);
+                    io.to(roomCode).emit("change user status", { userId, status: -1 });
+
+                    // 유저의 상태가 모두 0이하일 경우 방 폭파
+                    // 관전자는 카운트에서 제외함.
+                    // 방 나갈 때 게임 세션 말고 게임 테이블도 없애줘야해
+                    const isAllDisconnect = await gameRedis.isALLUserStatus();
+                    if (isAllDisconnect) {
+                        gameRedis.deleteRoom();
+                        const gameRoomData = new GameRoom({ room_id: gameRoom.room_id, status: 1 });
+                        const sessionData = new GameSession({ session_id: gameSession.session_id, status: 1 });
+
+                        await Promise.all([this.gameRepository.updateGameRoom(gameRoomData), this.gameRepository.updateGameSession(sessionData)]);
+
+                        RoomTimer.clearTimer(roomCode);
+                        // 관전자에게 플레이 중인 유저가 모두 나갔다고 알림을 줌.
+                        io.to(roomCode).emit("error", { status: 401, message: "존재하지 않는 방입니다." });
+                        return;
+                    }
+
+                    UserTimer.clearTimer(userId);
+                }
+                // 게임이 시작되지 않았을 때
+                else {
+                    await this.leaveRoom(io, socket, {});
+                    UserTimer.clearTimer(userId);
+                }
+            };
+
+            // const delay = gameSession.status === 1 ? 3000 : 0;
+            UserTimer.startTimer(userId, 3000, leaveGameTimeout);
+        } catch (error) {
+            let message = "연결 해제 오류";
+            if (error instanceof Error) {
+                logErrorSocket(error, socket, {});
+                message = error.message;
+            }
+            io.to(roomCode).emit("error", { status: 401, message });
+        }
+    }
+
+    @autobind
     async startGame(io: Namespace, socket: Socket, params: any) {
         const transaction = await sequelize.transaction();
 
@@ -64,7 +126,7 @@ export default class GameController {
             if (!gameRedis.isUserInRoom(userId)) throw new Error("don't exist user in room");
 
             // (redis) 인원수 문제 없는지 확인
-            if (!gameRedis.checkUserCount(2)) throw new Error("인원이 너무 적습니다.");
+            if (!(await gameRedis.isStart())) throw new Error("인원이 너무 적습니다.");
 
             // session 테이블의 playlist id로 플레이리스트 가져옴.
             const playlistData = new Playlist({ playlist_id: gameSession.playlist_id });
@@ -76,13 +138,13 @@ export default class GameController {
             if (songs.length > gameSession.goal_score) throw new Error("목표 점수가 너무 높습니다.");
 
             // 랜덤으로 순서를 전부 뽑는다.
-            const question_order = generateRandomOrder(songs, gameSession.goal_score);
-            console.log(question_order);
+            const question_order = generateRandomOrder(songs);
+
             // (redis) 현재 노래 설정
             const current_song_id = question_order[0];
             gameRedis.setCurrentSongId(current_song_id);
 
-            // 노래 url을 방에 있는 사람에게 전부 전달 emit
+            // 노래 정보 가져옴
             const songData = new Song({ song_id: current_song_id });
             const song = await this.gameRepository.findOneSong(songData);
             if (song === null) throw new Error("not song");
@@ -94,17 +156,20 @@ export default class GameController {
 
             await transaction.commit();
 
+            // 노래 시작 시간 치환
             const [hours, minutes, seconds] = song.start_time.split(":").map(Number);
             const start_time = hours * 3600 + minutes * 60 + seconds;
 
+            // 클라이언트에 보낼 데이터로 변형
             const gmaePlaylistData = new GamePlaylistDto({ ...playlist.dataValues });
             const gmaeSongData = new GameSongDto({ ...song.dataValues, start_time });
 
+            // emit
             io.to(roomCode).emit("game start", { gmaeSongData, gmaePlaylistData });
 
-            const playSongTimer = async (retryCount = 0, maxRetries = 30) => {
+            const playSongTimer = async (retryCount = 0, maxRetries = 10) => {
+                // io.to(roomCode).emit("play song");
                 try {
-                    console.log(retryCount);
                     const isAllAgree = await gameRedis.isALLAgreeNextAction();
                     if (isAllAgree) {
                         gameRedis.resetAgreeNextAction();
@@ -112,18 +177,18 @@ export default class GameController {
                         // 노래 재생! emit
                         io.to(roomCode).emit("play song");
 
-                        // this.startTimer(roomCode, 60000, () => {
-                        // 노래 멈춤
-                        // 다른 노래 설정
-                        // 다른 노래 보냄
-                        // });
+                        RoomTimer.startTimer(roomCode, 50000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
                     } else {
                         if (retryCount < maxRetries) {
-                            RoomTimer.startTimer(roomCode, 1000, () => playSongTimer(retryCount + 1, maxRetries));
+                            const notAgreeUsers = await gameRedis.getDisagreeUsersNextAction();
+                            if (notAgreeUsers.length !== 0) {
+                                io.to(roomCode).emit("next song", gmaeSongData, notAgreeUsers);
+                            }
+                            RoomTimer.startTimer(roomCode, 3000, () => playSongTimer(retryCount + 1, maxRetries));
                         } else {
-                            const gameRoomData = new GameSession({ session_id: gameSession.session_id, status: 0, question_order: null });
-                            await this.gameRepository.updateGameSession(gameRoomData);
-                            throw new Error("노래 재생 요청 횟수 초과");
+                            // 30번이나 요청해도 안되면 그냥 시작
+                            io.to(roomCode).emit("play song");
+                            RoomTimer.startTimer(roomCode, 50000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
                         }
                     }
                 } catch (error) {
@@ -132,7 +197,7 @@ export default class GameController {
                         logErrorSocket(error, socket, params);
                         message = error.message;
                     }
-                    socket.emit("error", { status: 401, message });
+                    io.to(roomCode).emit("error", { status: 401, message });
                 }
             };
 
@@ -170,7 +235,6 @@ export default class GameController {
 
             const responseData = new GameSongDto({ ...song });
             socket.emit("get song", responseData);
-            
         } catch (error) {
             let message = "노래를 재생할 수 없습니다.";
             if (error instanceof Error) {
@@ -194,7 +258,7 @@ export default class GameController {
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
             // (redis) 플레이 준비 완료
-            await gameRedis.agreeNextAction(userId);
+            await gameRedis.setAgreeNextAction(userId);
 
             const isAllAgree = await gameRedis.isALLAgreeNextAction();
             // --- (redis) 유저들의 동영상 로딩이 전부 준비 되면 ---
@@ -231,7 +295,7 @@ export default class GameController {
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
             // (redis) 플레이 준비 완료
-            await gameRedis.agreeNextAction(userId);
+            await gameRedis.setAgreeNextAction(userId);
 
             const isAllAgree = await gameRedis.isALLAgreeNextAction();
             // --- (redis) 유저들의 동영상 로딩이 전부 준비 되면 ---
@@ -239,7 +303,10 @@ export default class GameController {
                 // (redis) 준비 완료 초기화
                 gameRedis.resetAgreeNextAction();
                 gameRedis.setPossibleAnswer(true);
+                gameRedis.deleteAnswerUserId();
+
                 // 노래 재생! emit
+                RoomTimer.startTimer(roomCode, 50000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
                 return io.to(roomCode).emit("play song");
             }
         } catch (error) {
@@ -255,29 +322,38 @@ export default class GameController {
     @autobind
     async passSong(io: Namespace, socket: Socket, params: any) {
         try {
-            const { room_code } = params.data;
-            const { user_id } = socket.data.user;
+            const { userId, roomCode } = socket.data;
 
             // room_code로 session_table row 가져옴
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, room_code);
-
+            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
             // (redis) 패스 신청
-            await gameRedis.agreeNextAction(user_id);
+            await gameRedis.setAgreeNextAction(userId);
 
             const isAllAgree = await gameRedis.isALLAgreeNextAction();
+
             // --- (redis) 유저들이 모두 패스 신청하면 ---
             if (isAllAgree) {
                 // (redis) 패스 신청 초기화
                 gameRedis.resetAgreeNextAction();
                 // pass_count
-                // 노래 패스 *수정
+                // 노래 패스
                 // 다음 곡
                 // 정답 나와도 resetAgreeNextAction해야함.
+                RoomTimer.clearTimer(roomCode);
+                io.to(roomCode).emit("all pass song");
+                showAnswerAndNextSong(this.gameRepository, io, roomCode);
+            } else {
+                io.to(roomCode).emit("pass song", userId);
             }
         } catch (error) {
-            socket.emit("error", { status: 401, message: "노래를 패스할 수 없습니다." });
+            let message = "노래를 패스할 수 없습니다.";
+            if (error instanceof Error) {
+                logErrorSocket(error, socket, params);
+                message = error.message;
+            }
+            socket.emit("error", { status: 401, message });
         }
     }
 
@@ -288,7 +364,7 @@ export default class GameController {
         try {
             const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
 
-            if (gameSession.status === 1) throw new Error("already started game");
+            if (gameSession.status === 1) return;
 
             const gameRedis = await createRedisUtil(gameSession.session_id);
             if (!gameRedis.isUserInRoom(userId)) throw new Error("don't exist user in room");
@@ -300,6 +376,12 @@ export default class GameController {
             const userProfileData = new User({ user_id: userId });
             const userProfile = await this.userRepository.findOneUserProfile(userProfileData);
             if (userProfile === null) throw new Error("don't exist user profile");
+
+            const alertData = { session_id: gameSession.session_id, user_id: userId, answer_user_id: userId, message: "님이 입장했습니다." };
+            const answer = await this.alertAnswer(alertData);
+
+            // const responseData = { leaveUserId: userId, answer };
+            // io.to(roomCode).emit("leave game", responseData);
 
             const responseData = { id: user.user_id, userId, nickname: userProfile.nickname, score: 0 };
             io.to(roomCode).emit("join user", responseData);
@@ -425,6 +507,33 @@ export default class GameController {
     }
 
     @autobind
+    async changeUserStatus(io: Namespace, socket: Socket, params: any) {
+        const { userId, roomCode } = socket.data;
+
+        try {
+            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const gameRedis = await createRedisUtil(gameSession.session_id);
+
+            if (!gameRedis.isUserInRoom(userId)) throw new Error("입장하지 않은 방입니다.");
+
+            UserTimer.clearTimer(userId);
+            await gameRedis.setUserStatus(userId, 0);
+            const isAgree = await gameRedis.getAgreeNextAction(userId);
+            const status = isAgree === "true" ? 1 : 0;
+
+            const responseData = { userId, status };
+            io.to(roomCode).emit("change user status", responseData);
+        } catch (error) {
+            let message = "이름을 변경할 수 없습니다.";
+            if (error instanceof Error) {
+                logErrorSocket(error, socket, params);
+                message = error.message;
+            }
+            socket.emit("error", { status: 401, message });
+        }
+    }
+
+    @autobind
     async leaveRoom(io: Namespace, socket: Socket, params: any) {
         try {
             // user id와 code를 받는다.
@@ -444,7 +553,7 @@ export default class GameController {
 
             // 1명이면 방을 삭제함
             if (users.length === 1) {
-                gameRedis.deleteRoom(userId);
+                gameRedis.deleteRoom();
                 const gameRoomData = new GameRoom({ room_id: gameRoom.room_id, status: 1 });
                 const sessionData = new GameSession({ session_id: gameSession.session_id, status: 1 });
 
@@ -455,9 +564,11 @@ export default class GameController {
             await gameRedis.deleteUser(userId);
 
             // 방장이면 다음 순서를 방장으로 바꿈
+            let nextManagerId
             if (gameSession.user_id === userId) {
                 const users = gameRedis.getUsers();
-                const nextManagerId = users[0].user_id;
+                nextManagerId = users[0].user_id;
+                
                 const sessionData = new GameSession({ session_id: gameSession.session_id, user_id: nextManagerId });
                 await this.gameRepository.updateGameSession(sessionData);
             }
@@ -465,8 +576,8 @@ export default class GameController {
             const alertData = { session_id: gameSession.session_id, user_id: userId, answer_user_id: userId, message: "님이 나갔습니다." };
             const answer = await this.alertAnswer(alertData);
 
-            const responseData = { leaveUserId: userId, answer };
-            io.to(roomCode).emit("leave game", responseData);
+            const responseData = { leaveUserId: userId, answer, nextManagerId };
+            io.to(roomCode).emit("leave game", responseData,);
         } catch (error) {
             let message = "나가기 오류";
             if (error instanceof Error) {

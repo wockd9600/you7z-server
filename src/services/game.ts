@@ -65,7 +65,7 @@ export default class GameService {
             const currentSongId = await gameRedis.getCurrentSongId();
             const songData = new Song({ song_id: currentSongId, playlist_id: gamePlaylist.playlist_id });
             const song = currentSongId ? await this.gameRepository.findOneSong(songData) : null;
-            
+
             const answerData = new Answer({ session_id: gameSession.session_id });
             const answers = await this.answerRepository.getLatestAnswers(answerData);
 
@@ -159,6 +159,7 @@ export default class GameService {
                     if (gameSession.user_id === user_id) {
                         gameRoomData.status = 1;
                         await this.gameRepository.updateGameRoom(gameRoomData);
+                        await gameRedis.deleteRoom();
                     }
                 }
             }
@@ -178,7 +179,7 @@ export default class GameService {
                     message: "저장한 노래모음이 없습니다.",
                 };
             }
-
+            
             const gameSessionData = new GameSession({ room_id: gameRoom.room_id, user_id, playlist_id: userPlaylist.playlist_id });
             const gameSession = await this.gameRepository.createGameSession(gameSessionData, transaction);
             if (gameSession === null) throw new Error("방 정보를 찾을 수 없습니다. (GameSession 생성 실패)");

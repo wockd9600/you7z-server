@@ -42,27 +42,6 @@ class CustomValidationError extends Error {
     }
 }
 
-export class RoomTimer {
-    public static timers: { [roomCode: string]: NodeJS.Timeout } = {};
-
-    public static startTimer(roomCode: string, duration: number, callback: () => void) {
-        if (RoomTimer.timers[roomCode]) {
-            clearTimeout(RoomTimer.timers[roomCode]); // 기존 타이머가 있으면 제거
-        }
-        RoomTimer.timers[roomCode] = setTimeout(() => {
-            callback();
-            delete RoomTimer.timers[roomCode]; // 타이머 종료 후 제거
-        }, duration);
-    }
-
-    public static clearTimer(roomCode: string) {
-        if (RoomTimer.timers[roomCode]) {
-            clearTimeout(RoomTimer.timers[roomCode]);
-            delete RoomTimer.timers[roomCode];
-        }
-    }
-}
-
 export default function initializeNamespace(io: Namespace) {
     async function validateParams(schema: any, params: any): Promise<any> {
         try {
@@ -108,6 +87,7 @@ export default function initializeNamespace(io: Namespace) {
                     params.request_cnt += 1;
 
                     if (params.request_cnt > 3) return socket.emit("relogin");
+                    params.event = socket.data.event
                     socket.emit("token expired", params);
                 } else {
                     // logError(error, { socketId: socket.id, event: "unknown" });
@@ -128,20 +108,25 @@ export default function initializeNamespace(io: Namespace) {
             socket.disconnect();
         }
 
-        socket.on("disconnect", () => {
-            console.log("user disconnected");
+        socket.onAny((event, ...args) => {
+            socket.data.event = event;
+            // console.log(`[${socket.data.roomCode}] ${event}`)
         });
+
+        socket.on("disconnect", () => gameController.disconnect(io, socket));
 
         /* GAME */
         socket.on("game start", (params) => eventMiddleware(params, socket, () => gameController.startGame(io, socket, params)));
         // socket.on("get song", (params) => eventMiddleware(params, socket, () => gameController.getSong(io, socket, params)));
         socket.on("ready song", (params) => eventMiddleware(params, socket, () => gameController.readySong(io, socket, params)));
         socket.on("play song", (params) => eventMiddleware(params, socket, () => gameController.playSong(io, socket, params)));
+        socket.on("pass song", (params) => eventMiddleware(params, socket, () => gameController.passSong(io, socket, params)));
 
         socket.on("join user", (params) => eventMiddleware(params, socket, () => gameController.joinUser(io, socket, params)));
         socket.on("user kick", (params) => eventMiddleware(params, socket, () => gameController.kickUser(io, socket, params), UserKickRequestDto));
         socket.on("change game setting", (params) => eventMiddleware(params, socket, () => gameController.updateRoomSettings(io, socket, params), ChangeGameSettingRequestDto));
         socket.on("change user name", (params) => eventMiddleware(params, socket, () => gameController.changeUserName(io, socket, params), ChangeUserNameRequestDto));
+        socket.on("change user status", (params) => eventMiddleware(params, socket, () => gameController.changeUserStatus(io, socket, params)));
         socket.on("leave game", (params) => eventMiddleware(params, socket, () => gameController.leaveRoom(io, socket, params)));
 
         /* ANSWER */

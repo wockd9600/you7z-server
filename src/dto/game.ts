@@ -27,14 +27,14 @@ export class GameSongDto {
     id: number;
     url: string;
     startTime: string;
-    description: string;
+    // description: string;
 
     constructor(data: { song_id: number; url: string; start_time: string; description: string }) {
         const { song_id, url, start_time, description } = data;
         this.id = song_id;
         this.url = url;
         this.startTime = start_time;
-        this.description = description;
+        // this.description = description;
     }
 }
 

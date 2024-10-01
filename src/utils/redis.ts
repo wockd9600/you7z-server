@@ -6,9 +6,11 @@ export default async function createRedisUtil(session_id: number): Promise<Redis
     return redisUtil;
 }
 
+type RedisUser = { user_id: number; order: number };
+
 export class RedisUtil {
     public session_id: number;
-    public users: { user_id: number; order: number }[] = [];
+    public users: RedisUser[] = [];
 
     constructor(session_id: number) {
         this.session_id = session_id;
@@ -68,6 +70,22 @@ export class RedisUtil {
         return result;
     }
 
+    public async getConnectedUsers(): Promise<RedisUser[]> {
+        const users = await Promise.all(
+            this.users.map(async (user) => {
+                const status = await this.getUserStatus(user.user_id);
+                return { user, status };
+            })
+        );
+
+        return users.filter(({ status }) => status !== -1).map(({ user }) => user);
+    }
+
+    public async isStart(): Promise<boolean> {
+        const connectedUsers = await this.getConnectedUsers();
+        return connectedUsers.length >= 2 && connectedUsers.length <= 8;
+    }
+
     public checkUserCount(min: number): boolean {
         // 인원수 문제 없는지 확인
         // 현재 유저들 가져옴
@@ -103,12 +121,49 @@ export class RedisUtil {
         return parseInt(score || "0", 10);
     }
 
+    public async getUserStatus(user_id: number) {
+        const key = `session:${this.session_id}:user:${user_id}:status`;
+        const score = await redisClient.get(key);
+        return parseInt(score || "0", 10);
+    }
+
+    public async getAgreeNextAction(user_id: number) {
+        const key = `session:${this.session_id}:user:${user_id}:agreeNextAction`;
+        const value = await redisClient.get(key);
+        return value;
+    }
+
     public async isALLAgreeNextAction(): Promise<boolean> {
         // 유저들의 동영상 로딩이 전부 준비 되면
-        const promises = this.users.map(async (user) => {
+        const connectedUsers = await this.getConnectedUsers();
+        const promises = connectedUsers.map(async (user) => {
             const agreeNextActionKey = `session:${this.session_id}:user:${user.user_id}:agreeNextAction`;
             const value = await redisClient.get(agreeNextActionKey);
             return value === "true";
+        });
+
+        const results = await Promise.all(promises);
+        return results.every((agreed) => agreed);
+    }
+
+    public async getDisagreeUsersNextAction(): Promise<number[]> {
+        const connectedUsers = await this.getConnectedUsers();
+        const promises = connectedUsers.map(async (user) => {
+            const agreeNextActionKey = `session:${this.session_id}:user:${user.user_id}:agreeNextAction`;
+            const value = await redisClient.get(agreeNextActionKey);
+            return { ...user, agree: value || "false" };
+        });
+        const results = await Promise.all(promises);
+        return results.filter((user) => user.agree !== "true").map((user) => user.user_id);
+    }
+
+    public async isALLUserStatus(): Promise<boolean> {
+        // 유저들의 동영상 로딩이 전부 준비 되면
+        const connectedUsers = await this.getConnectedUsers();
+        const promises = connectedUsers.map(async (user) => {
+            const key = `session:${this.session_id}:user:${user.user_id}:status`;
+            const value = await redisClient.get(key);
+            return value === "-1";
         });
 
         const results = await Promise.all(promises);
@@ -170,6 +225,7 @@ export class RedisUtil {
             await redisClient.set(userKey, JSON.stringify({ user_id, order }), { EX: 60 * 60 });
 
             await this.setUserScore(user_id, 0);
+            await this.setUserStatus(user_id, 0);
 
             const pattern = `session:${this.session_id}:user:*`;
             const keys = await redisClient.keys(pattern);
@@ -186,7 +242,7 @@ export class RedisUtil {
         }
     }
 
-    public async agreeNextAction(user_id: number): Promise<void> {
+    public async setAgreeNextAction(user_id: number): Promise<void> {
         // 플레이 준비 완료
         const agreeNextActionKey = `session:${this.session_id}:user:${user_id}:agreeNextAction`;
         await redisClient.set(agreeNextActionKey, "true", { EX: 60 * 60 });
@@ -197,6 +253,16 @@ export class RedisUtil {
         try {
             const userScoreKey = `session:${this.session_id}:user:${user_id}:score`;
             await redisClient.set(userScoreKey, score.toString(), { EX: 60 * 60 });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    public async setUserStatus(user_id: number, status: 0 | -1) {
+        // 유저 스코어 설정
+        try {
+            const userStatuseKey = `session:${this.session_id}:user:${user_id}:status`;
+            await redisClient.set(userStatuseKey, status.toString(), { EX: 60 * 60 });
         } catch (error) {
             throw error;
         }
@@ -220,36 +286,41 @@ export class RedisUtil {
     }
 
     // delete
-    public async deleteRoom(user_id: number) {
+    public async deleteRoom() {
         try {
             this.resetAgreeNextAction();
-            this.deleteUser(user_id);
+            this.deleteAnswerUserId();
             this.deleteSong();
-            this.deleteUserScore(user_id);
+
+            await Promise.all(this.users.map((user) => this.deleteUser(user.user_id)));
         } catch (error) {
             throw error;
         }
     }
 
-    public resetAgreeNextAction(): void {
-        const promises = this.users.map((user) => {
-            const agreeNextActionKey = `session:${this.session_id}:user:${user.user_id}:agreeNextAction`;
-            return redisClient.del(agreeNextActionKey);
-        });
+    public async resetAgreeNextAction() {
+        try {
+            const promises = this.users.map((user) => {
+                const agreeNextActionKey = `session:${this.session_id}:user:${user.user_id}:agreeNextAction`;
+                return redisClient.del(agreeNextActionKey);
+            });
 
-        Promise.all(promises).catch((error) => {
+            await Promise.all(promises);
+        } catch (error) {
             throw error;
-        });
+        }
     }
 
     public async deleteUser(user_id: number): Promise<void> {
         try {
             const userKey = `session:${this.session_id}:user:${user_id}`;
-            await redisClient.del(userKey);
-
             const userScoreKey = `session:${this.session_id}:user:${user_id}:score`;
-            await redisClient.del(userScoreKey);
+            const userStatusKey = `session:${this.session_id}:user:${user_id}:status`;
 
+            // 병렬로 Redis 키 삭제
+            await Promise.all([redisClient.del(userKey), redisClient.del(userScoreKey), redisClient.del(userStatusKey)]);
+
+            // 유저 목록 필터링
             this.users = this.users.filter((user) => user.user_id !== user_id);
         } catch (error) {
             console.error(`Failed to delete user ${user_id}:`, error);
@@ -264,6 +335,20 @@ export class RedisUtil {
         } catch (error) {
             throw error;
         }
+    }
+
+    public async deleteUserStatus(user_id: number) {
+        try {
+            const key = `session:${this.session_id}:user:${user_id}:status`;
+            await redisClient.del(key);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    public async deleteAnswerUserId() {
+        const key = `session:${this.session_id}:answer`;
+        await redisClient.del(key);
     }
 
     public async deleteSong() {

@@ -12,6 +12,7 @@ import Playlist from "../models/Playlist";
 import UserPlaylist from "../models/UserPlaylist";
 
 import { StoreRequestDto, CreateRequestDto, CheckYoutubeLinkRequestDto, DeleteRequestDto } from "../dto/playlist";
+import Song from "../models/Song";
 
 export default class PlaylistController {
     constructor(private playlistRepository: IPlaylistRepository) {}
@@ -103,14 +104,7 @@ export default class PlaylistController {
             const user_playlist = await this.playlistRepository.createPlaylist(playlistData, transaction);
 
             const songEntities = songs.map((song) => {
-                const songAnswer = song.answer.replace(/\s+/g, "");
-                return {
-                    answer: songAnswer,
-                    description: song.description,
-                    url: song.youtubeLink,
-                    start_time: song.startTime,
-                    playlist_id: user_playlist.playlist_id,
-                };
+                return new Song({ ...song, playlist_id: user_playlist.playlist_id });
             });
 
             await this.playlistRepository.bulkCreateSong(songEntities, transaction);
