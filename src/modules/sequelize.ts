@@ -6,8 +6,6 @@ import { config } from "../config/config";
 //     dialect : 'mysql',
 // })
 
-console.log("sequelize : ", process.env.RDS_DATABASE)
-
 
 export const sequelize = new Sequelize(config.development.database, config.development.user, config.development.password, {
     host: config.development.host,

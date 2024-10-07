@@ -1,6 +1,6 @@
 import { QueryInterface, Sequelize, Options } from "sequelize";
 import * as dotenv from "dotenv";
-dotenv.config();
+dotenv.config({ path: __dirname + '/../../../.env' });
 
 class options implements Options {
     dialect!: "mysql";

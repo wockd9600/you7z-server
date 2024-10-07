@@ -1,7 +1,5 @@
 import * as dotenv from "dotenv";
-dotenv.config();
-
-console.log("config : ", process.env.RDS_DATABASE)
+dotenv.config({ path: __dirname + '/../../.env' });
 
 export const config = {
     development: {

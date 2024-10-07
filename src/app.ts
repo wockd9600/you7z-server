@@ -2,8 +2,6 @@ import "dotenv/config";
 import cors from "cors";
 import express, { Request, Response, NextFunction } from "express";
 import "reflect-metadata";
-import * as dotenv from "dotenv";
-dotenv.config();
 
 // import { sequelize } from "./modules/sequelize";
 // import RedisStore from "connect-redis"
@@ -71,7 +69,6 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
 // https://velog.io/@wlduq0150/Artillery-Artillery를-이용해-socket.io-부하테스트-해보기
 const ioServer = initializeSocket(app);
 ioServer.listen(8000, async () => {
-    console.log("evn check : ", process.env.CHECK)
     // test
     // await sequelize
     //     .authenticate()
