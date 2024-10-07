@@ -1,6 +1,8 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
+console.log("config : ", process.env.RDS_DATABASE)
+
 export const config = {
     development: {
         host: process.env.RDS_HOST!,
