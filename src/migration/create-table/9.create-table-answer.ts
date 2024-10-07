@@ -7,7 +7,7 @@ const create_table_answer = async () => {
         .then(() => {
             console.log("Success Create User Table");
         })
-        .catch((err) => {
+        .catch((err: any) => {
             console.log(err);
         });
 };

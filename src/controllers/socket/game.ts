@@ -564,11 +564,11 @@ export default class GameController {
             await gameRedis.deleteUser(userId);
 
             // 방장이면 다음 순서를 방장으로 바꿈
-            let nextManagerId
+            let nextManagerId;
             if (gameSession.user_id === userId) {
                 const users = gameRedis.getUsers();
                 nextManagerId = users[0].user_id;
-                
+
                 const sessionData = new GameSession({ session_id: gameSession.session_id, user_id: nextManagerId });
                 await this.gameRepository.updateGameSession(sessionData);
             }
@@ -577,7 +577,7 @@ export default class GameController {
             const answer = await this.alertAnswer(alertData);
 
             const responseData = { leaveUserId: userId, answer, nextManagerId };
-            io.to(roomCode).emit("leave game", responseData,);
+            io.to(roomCode).emit("leave game", responseData);
         } catch (error) {
             let message = "나가기 오류";
             if (error instanceof Error) {

@@ -19,7 +19,7 @@ export class GameUserDto {
         this.order = order;
         this.nickname = nickname;
         this.score = score;
-        this.isReady = false;
+        this.isReady = true;
     }
 }
 

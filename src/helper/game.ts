@@ -50,7 +50,7 @@ export async function finishGame(gameRepository: IGameRepository, io: Namespace,
     try {
         RoomTimer.clearTimer(roomCode);
 
-        const { gameSession } = await getGameSessionFromRoomCode(gameRepository, roomCode);
+        const { gameRoom, gameSession } = await getGameSessionFromRoomCode(gameRepository, roomCode);
         const gameRedis = await createRedisUtil(gameSession.session_id);
 
         // 다 초기화
@@ -79,7 +79,15 @@ export async function finishGame(gameRepository: IGameRepository, io: Namespace,
 
         // wjqthrehls dbwjrk djqtdmaus qkdtkrwp
         if (newUsers.length === 0) {
-            throw new Error("존재하지 않는 방입니다.");
+            gameRedis.deleteRoom();
+            RoomTimer.clearTimer(roomCode);
+
+            const gameRoomData = new GameRoom({ room_id: gameRoom.room_id, status: 1 });
+            const sessionData = new GameSession({ session_id: gameSession.session_id, status: 1 });
+
+            await Promise.all([gameRepository.updateGameRoom(gameRoomData), gameRepository.updateGameSession(sessionData)]);
+
+            return;
         }
 
         const managerId = newUsers[0].user_id;
@@ -112,7 +120,7 @@ export async function finishGame(gameRepository: IGameRepository, io: Namespace,
 
 export async function showAnswerAndNextSong(gameRepository: IGameRepository, io: Namespace, roomCode: string) {
     try {
-        const { gameSession } = await getGameSessionFromRoomCode(gameRepository, roomCode);
+        const { gameRoom, gameSession } = await getGameSessionFromRoomCode(gameRepository, roomCode);
         const gameRedis = await createRedisUtil(gameSession.session_id);
 
         // 정답을 맞췄으면 다음 곡을 설정할 필요는 없음.
@@ -153,10 +161,16 @@ export async function showAnswerAndNextSong(gameRepository: IGameRepository, io:
 
         const playSongTimer = async (retryCount = 0, maxRetries = 10) => {
             const connectedUsers = await gameRedis.getConnectedUsers();
-            
+
             if (connectedUsers.length === 0) {
                 gameRedis.deleteRoom();
                 RoomTimer.clearTimer(roomCode);
+
+                const gameRoomData = new GameRoom({ room_id: gameRoom.room_id, status: 1 });
+                const sessionData = new GameSession({ session_id: gameSession.session_id, status: 1 });
+
+                await Promise.all([gameRepository.updateGameRoom(gameRoomData), gameRepository.updateGameSession(sessionData)]);
+                return;
             }
 
             try {

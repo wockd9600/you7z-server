@@ -125,9 +125,9 @@ export default class GameRepository implements IGameRepository {
 
         const updateData: any = {};
         if (status !== undefined) updateData.status = status;
-
+        console.log(updateData)
         try {
-            await GameSession.update(updateData, {
+            await GameRoom.update(updateData, {
                 where: { room_id },
             });
         } catch (error) {

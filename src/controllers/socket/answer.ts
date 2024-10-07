@@ -85,18 +85,18 @@ export default class AnswerController {
             const findIndex = orders.indexOf(song_id);
 
             const answerSongResponseData = { answer: answers[0], description: current_song.description };
+            const scoreResponseData = { userId, score: user_score };
+            const responseData = { answer: true, answerSongResponseData, scoreResponseData, answerResponseData };
 
             // 목표 점수에 달성하면 게임 끝
             if (gameSession.goal_score <= user_score || findIndex === orders.length) {
-                const scoreResponseData = { userId, score: user_score };
-                io.to(roomCode).emit("submit answer", { scoreResponseData, answerSongResponseData });
+                io.to(roomCode).emit("submit answer", responseData);
                 finishGame(this.gameRepository, io, roomCode);
             }
 
             const next_song = await setNextSong(this.gameRepository, gameSession, gameRedis);
             if (!next_song) {
-                const scoreResponseData = { userId, score: user_score };
-                io.to(roomCode).emit("submit answer", { scoreResponseData, answerSongResponseData });
+                io.to(roomCode).emit("submit answer", responseData);
                 finishGame(this.gameRepository, io, roomCode);
                 return;
             }
@@ -107,12 +107,8 @@ export default class AnswerController {
             const songResponseData = new GameSongDto({ ...next_song.dataValues });
             io.to(roomCode).emit("next song", songResponseData);
 
-            // 방에 있는 사람들에게 url emit
-            const scoreResponseData = { userId, score: user_score };
-            const responseData = { answer: true, answerSongResponseData, scoreResponseData, answerResponseData };
-
             transaction.commit();
-
+            
             // answer emit
             io.to(roomCode).emit("submit answer", responseData);
         } catch (error) {

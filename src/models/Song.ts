@@ -74,6 +74,4 @@ Song.init(
     }
 );
 
-Song.belongsTo(PlayList, { foreignKey: "playlist_id" });
-
 export default Song;

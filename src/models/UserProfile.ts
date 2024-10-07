@@ -48,6 +48,4 @@ UserProfile.init(
     }
 );
 
-UserProfile.belongsTo(User, { foreignKey: "user_id" });
-
 export default UserProfile;

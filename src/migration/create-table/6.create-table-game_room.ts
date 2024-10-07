@@ -7,7 +7,7 @@ const create_table_game_room = async () => {
         .then(() => {
             console.log("Success Create User Table");
         })
-        .catch((err) => {
+        .catch((err: any) => {
             console.log(err);
         });
 };
