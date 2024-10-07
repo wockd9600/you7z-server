@@ -1,7 +1,7 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../modules/sequelize";
 import GameRoom from "./GameRoom";
-import PlayList from "./Playlist"; // Assuming you have a Playlist model
+import Playlist from "./Playlist"; // Assuming you have a Playlist model
 import User from "./User";
 
 class GameSession extends Model {
@@ -43,7 +43,7 @@ GameSession.init(
             type: DataTypes.INTEGER,
             allowNull: false,
             references: {
-                model: PlayList,
+                model: Playlist,
                 key: "playlist_id",
             },
         },

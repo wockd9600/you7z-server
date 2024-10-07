@@ -72,3 +72,5 @@ Playlist.init(
         timestamps: false,
     }
 );
+
+export default Playlist;
