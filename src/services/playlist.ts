@@ -14,6 +14,10 @@ import UserPlaylist from "../models/UserPlaylist";
 import { StoreRequestDto, CreateRequestDto, CheckYoutubeLinkRequestDto, DeleteRequestDto } from "../dto/playlist";
 import Song from "../models/Song";
 
+interface PlaylistWithDownloaded extends Playlist {
+    "UserPlaylists.downloaded"?: number; // Add your custom property here
+}
+
 export default class PlaylistController {
     constructor(private playlistRepository: IPlaylistRepository) {}
 
@@ -34,7 +38,7 @@ export default class PlaylistController {
             const playlists = await this.playlistRepository.getPlaylists(limit, offset, user_id, type, search_term);
 
             if (playlists.length === 0) return [];
-            const playlistDtos = playlists.map((playlist: Playlist) => {
+            const playlistDtos = playlists.map((playlist: PlaylistWithDownloaded) => {
                 let downloaded = 0;
                 if ("UserPlaylists.downloaded" in playlist) {
                     downloaded = (playlist["UserPlaylists.downloaded"] as number) || 0;
