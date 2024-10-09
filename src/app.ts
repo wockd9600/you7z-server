@@ -23,12 +23,12 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "5mb" }));
 
+app.use(morganMiddleware);
+
 app.get("/health", (req, res) => {
     // 서버가 정상적으로 작동 중인 경우 200 상태 코드를 반환
-    res.status(200).send("Healthy");
+    return res.status(200).send("Healthy");
 });
-
-app.use(morganMiddleware);
 
 // let redisStore = new RedisStore({
 //     client: redisClient,
@@ -54,9 +54,10 @@ app.use("/playlist", playlistRoute);
 app.use("/game", gameRoute);
 app.use("/answer", answerRoute);
 
-app.use("/", (req, res, next) => {
-    const err = new Error("404 Not Found");
-    next(err);
+app.use((req, res, next) => {
+    const error = new Error("404 error")
+    logError(error, req);
+    return res.status(404).send("Sorry cant find that!");
 });
 
 app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
@@ -68,7 +69,7 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
     //     const reqBodyString = JSON.stringify(req.body);
     //     logger.error(`[${req.method}] ${req.path} | ${statusCode} | [REQUEST] ${reqBodyString} | ${truncatedStack}`);
     logError(error, req);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
 });
 
 // https://velog.io/@wlduq0150/Artillery-Artillery를-이용해-socket.io-부하테스트-해보기
