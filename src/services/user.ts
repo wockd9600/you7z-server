@@ -119,8 +119,6 @@ export default class UserService {
         } catch (error) {
             await transaction.rollback();
             throw error;
-        } finally {
-            if (transaction) transaction.rollback();
         }
     }
 

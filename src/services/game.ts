@@ -156,6 +156,7 @@ export default class GameService {
                 // 삭제된 방은 검색하지 않음. ( reulst: null)
                 if (gameRoom !== null) {
                     // 방장이면 방 제거
+                    await transaction.rollback();
                     if (gameSession.user_id === user_id) {
                         gameRoomData.status = 1;
                         await this.gameRepository.updateGameRoom(gameRoomData);
@@ -169,17 +170,17 @@ export default class GameService {
 
             const gameRoomData = new GameRoom({ room_code });
             const gameRoom = await this.gameRepository.createGameRoom(gameRoomData, transaction);
-            if (gameRoom === null) throw new Error("방 정보를 찾을 수 없습니다. (GameRoom 생성 실패)");
-
+            
             const userPlaylistData = new UserPlaylist({ user_id });
             const userPlaylist = await this.gameRepository.findOneUserPlayList(userPlaylistData);
             if (userPlaylist === null) {
+                await transaction.rollback();
                 return {
                     success: false,
                     message: "저장한 노래모음이 없습니다.",
                 };
             }
-            
+
             const gameSessionData = new GameSession({ room_id: gameRoom.room_id, user_id, playlist_id: userPlaylist.playlist_id });
             const gameSession = await this.gameRepository.createGameSession(gameSessionData, transaction);
             if (gameSession === null) throw new Error("방 정보를 찾을 수 없습니다. (GameSession 생성 실패)");
@@ -205,8 +206,6 @@ export default class GameService {
         } catch (error) {
             await transaction.rollback();
             throw error;
-        } finally {
-            if (transaction) transaction.rollback()
         }
     }
 }
