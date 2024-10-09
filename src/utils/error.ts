@@ -4,7 +4,7 @@ import { Socket } from "socket.io";
 
 export function logError(error: Error, req: Request) {
     // Structured logging to capture useful information
-    console.log(error);
+    // console.log(error);
     logger.error({
         message: error.message,
         method: req.method,
@@ -19,7 +19,7 @@ export function logErrorSocket(error: Error, socket: Socket, params: any) {
     // Structured logging to capture useful information
     const clientIp = socket.handshake.headers["x-forwarded-for"] || socket.handshake.address;
     const url = params.event;
-    console.log(error);
+    // console.log(error);
     logger.error({
         message: error.message,
         method: "",
