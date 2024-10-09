@@ -108,7 +108,7 @@ export default class AnswerController {
             io.to(roomCode).emit("next song", songResponseData);
 
             transaction.commit();
-            
+
             // answer emit
             io.to(roomCode).emit("submit answer", responseData);
         } catch (error) {
@@ -119,6 +119,8 @@ export default class AnswerController {
                 message = error.message;
             }
             socket.emit("error", { status: 401, message });
+        } finally {
+            if (transaction) transaction.rollback();
         }
     }
     // 다른 메서드들...

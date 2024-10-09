@@ -210,6 +210,8 @@ export default class GameController {
                 message = error.message;
             }
             socket.emit("error", { status: 401, message });
+        } finally {
+            if (transaction) transaction.rollback();
         }
     }
 

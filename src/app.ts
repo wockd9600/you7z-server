@@ -55,7 +55,7 @@ app.use("/game", gameRoute);
 app.use("/answer", answerRoute);
 
 app.use((req, res, next) => {
-    const error = new Error("404 error")
+    const error = new Error("404 error");
     logError(error, req);
     return res.status(404).send("Sorry cant find that!");
 });

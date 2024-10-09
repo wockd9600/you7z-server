@@ -119,6 +119,8 @@ export default class UserService {
         } catch (error) {
             await transaction.rollback();
             throw error;
+        } finally {
+            if (transaction) transaction.rollback();
         }
     }
 
@@ -137,7 +139,6 @@ export default class UserService {
         const { refresh_token } = refreshDto;
 
         try {
-
             const decoded = jwt.decode(access_token) as JwtPayload;
             if (typeof decoded !== "object" || decoded === null || !("id" in decoded)) throw new Error("토큰 사용자 없음");
 
