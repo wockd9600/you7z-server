@@ -46,4 +46,6 @@ UserPlaylist.init(
     }
 );
 
+// UserPlaylist.belongsTo(Playlist, { foreignKey: "playlist_id", targetKey: "playlist_id" });
+
 export default UserPlaylist;

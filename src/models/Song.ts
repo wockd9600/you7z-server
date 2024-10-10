@@ -34,12 +34,12 @@ Song.init(
             allowNull: false,
         },
         start_time: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING(128),
             allowNull: true,
         },
         answer: {
             type: DataTypes.STRING(128),
-            allowNull: true,
+            allowNull: false,
         },
         description: {
             type: DataTypes.STRING(128),

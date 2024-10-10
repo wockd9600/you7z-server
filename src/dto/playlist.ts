@@ -34,10 +34,13 @@ export class PlayListDto {
     @IsNumber()
     downloaded: number;
 
-    constructor({ playlist_id, title, description, length, download_count }: Playlist, downloaded: number) {
-        this.id = playlist_id;
+    constructor(playlist: Playlist, downloaded: number) {
+        if (!playlist) return;
+        
+        const { playlist_id, title, description, length, download_count } = playlist;
         this.title = title;
         this.description = description;
+        this.id = playlist_id;
         this.length = length;
         this.score = download_count;
         this.downloaded = downloaded;
@@ -130,7 +133,7 @@ export class CreateRequestDto {
 
     @Expose()
     @IsArray()
-    @ArrayMinSize(5)
+    // @ArrayMinSize(5)
     @ArrayMaxSize(100)
     @ValidateNested({ each: true })
     @Type(() => SongDto)

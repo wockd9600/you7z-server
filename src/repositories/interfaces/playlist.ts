@@ -10,7 +10,7 @@ export default interface IPlaylistRepository {
     findOneUserPlaylist(user_playlist: UserPlaylist): Promise<UserPlaylist | null>;
 
     createPlaylist(playlist: Playlist, transaction?: Transaction | null): Promise<Playlist>;
-    createUserPlaylist(user_playlist: UserPlaylist): Promise<UserPlaylist>;
+    createUserPlaylist(user_playlist: UserPlaylist, transaction?: Transaction): Promise<UserPlaylist>;
     bulkCreateSong(songs: Partial<Song>[], transaction?: Transaction | null): Promise<void>;
 
     updateDeletePlaylist(playlist: Playlist): Promise<void>;

@@ -1,6 +1,7 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../modules/sequelize";
 import User from "./User";
+import UserPlaylist from "./UserPlaylist";
 
 class Playlist extends Model {
     public playlist_id!: number;
@@ -72,5 +73,7 @@ Playlist.init(
         timestamps: false,
     }
 );
+
+Playlist.hasMany(UserPlaylist, { foreignKey: "playlist_id" });
 
 export default Playlist;

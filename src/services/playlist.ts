@@ -36,8 +36,8 @@ export default class PlaylistController {
             const { limit, offset } = this.getOffsetAndLimit(page);
 
             const playlists = await this.playlistRepository.getPlaylists(limit, offset, user_id, type, search_term);
-
             if (playlists.length === 0) return [];
+
             const playlistDtos = playlists.map((playlist: PlaylistWithDownloaded) => {
                 let downloaded = 0;
                 if ("UserPlaylists.downloaded" in playlist) {
@@ -106,20 +106,25 @@ export default class PlaylistController {
 
             const playlistData = new Playlist({ ...playlist, user_id, length });
             const user_playlist = await this.playlistRepository.createPlaylist(playlistData, transaction);
-
+            
             const songEntities = songs.map((song) => {
-                return new Song({ ...song, playlist_id: user_playlist.playlist_id });
+                return new Song({
+                    ...song,
+                    playlist_id: user_playlist.playlist_id,
+                    url: song.youtubeLink,
+                    start_time: song.startTime,
+                });
             });
-
+            
             await this.playlistRepository.bulkCreateSong(songEntities, transaction);
-
+            
             const userPlaylistData = new UserPlaylist({
                 playlist_id: user_playlist.playlist_id,
                 user_id,
             });
-
-            await this.playlistRepository.createUserPlaylist(userPlaylistData);
-
+            
+            await this.playlistRepository.createUserPlaylist(userPlaylistData, transaction);
+            
             const createResponseDto = new dto.CreateResponseDto(true);
             await transaction.commit();
 

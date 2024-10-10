@@ -31,6 +31,7 @@ export default class PlaylistRepository implements IPlaylistRepository {
 
             includeCondition.push(joinUserPlaylist);
         } else if (type === PlaylistType.MY_WITH_CREATED) {
+            delete whereCondition.status;
             joinUserPlaylist.required = true;
             includeCondition.push(joinUserPlaylist);
         } else if (type === PlaylistType.CREATED) {
@@ -124,14 +125,17 @@ export default class PlaylistRepository implements IPlaylistRepository {
         }
     }
 
-    async createUserPlaylist(user_playlist: UserPlaylist) {
+    async createUserPlaylist(user_playlist: UserPlaylist, transaction?: Transaction) {
         const { playlist_id, user_id } = user_playlist;
 
         try {
-            return await UserPlaylist.create({
-                playlist_id,
-                user_id,
-            });
+            return await UserPlaylist.create(
+                {
+                    playlist_id,
+                    user_id,
+                },
+                { transaction }
+            );
         } catch (error) {
             throw error;
         }
@@ -139,7 +143,8 @@ export default class PlaylistRepository implements IPlaylistRepository {
 
     async bulkCreateSong(songs: Partial<Song>[], transaction: Transaction) {
         try {
-            await Song.bulkCreate(songs, {
+            const songDataValues = songs.map((song) => song.dataValues); // dataValues만 추출
+            await Song.bulkCreate(songDataValues, {
                 validate: true,
                 individualHooks: true,
                 transaction,

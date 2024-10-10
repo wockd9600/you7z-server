@@ -4,9 +4,9 @@ import { Socket } from "socket.io";
 
 export function logError(error: Error, req: Request) {
     // Structured logging to capture useful information
-    // console.log(error);
+    // console.log("log error ", error);
     logger.error({
-        message: error.message,
+        message: `${error}`,
         method: req.method,
         user_id: req.user?.user_id || -1,
         url: req.originalUrl,
