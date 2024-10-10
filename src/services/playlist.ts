@@ -106,25 +106,28 @@ export default class PlaylistController {
 
             const playlistData = new Playlist({ ...playlist, user_id, length });
             const user_playlist = await this.playlistRepository.createPlaylist(playlistData, transaction);
-            
+
             const songEntities = songs.map((song) => {
+                const videoId = this.getYoutubeVideoId(song.youtubeLink);
+                if (!videoId) throw new Error("유효한 YouTube URL이 아닙니다.");
+
                 return new Song({
                     ...song,
                     playlist_id: user_playlist.playlist_id,
-                    url: song.youtubeLink,
+                    url: videoId,
                     start_time: song.startTime,
                 });
             });
-            
+
             await this.playlistRepository.bulkCreateSong(songEntities, transaction);
-            
+
             const userPlaylistData = new UserPlaylist({
                 playlist_id: user_playlist.playlist_id,
                 user_id,
             });
-            
+
             await this.playlistRepository.createUserPlaylist(userPlaylistData, transaction);
-            
+
             const createResponseDto = new dto.CreateResponseDto(true);
             await transaction.commit();
 

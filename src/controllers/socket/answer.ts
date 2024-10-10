@@ -69,7 +69,7 @@ export default class AnswerController {
             // console.log(answers);
             // console.log("is answer?! : ", !answers.includes(message));
 
-            const sanitizedAnswers = current_song.answer.replace(/\s+/g, "").split(",");
+            const sanitizedAnswers = current_song.answer.replace(/\s+/g, "").toLowerCase().split(",");
             const sanitizedMessage = message.replace(/\s+/g, "");
 
             if (!sanitizedAnswers.includes(sanitizedMessage)) {
