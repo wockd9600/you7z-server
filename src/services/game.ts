@@ -127,6 +127,10 @@ export default class GameService {
 
             return { success: true };
         } catch (error) {
+            if (error instanceof Error && error.message === "방 정보를 찾을 수 없습니다.") {
+                return { success: false, message: "방 정보를 찾을 수 없습니다." };
+            }
+
             throw error;
         }
     }
@@ -170,7 +174,7 @@ export default class GameService {
 
             const gameRoomData = new GameRoom({ room_code });
             const gameRoom = await this.gameRepository.createGameRoom(gameRoomData, transaction);
-            
+
             const userPlaylistData = new UserPlaylist({ user_id });
             const userPlaylist = await this.gameRepository.findOneUserPlayList(userPlaylistData);
             if (userPlaylist === null) {
