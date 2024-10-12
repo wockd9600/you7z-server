@@ -292,7 +292,7 @@ export async function getGameSessionFromRoomCode(gameRepository: IGameRepository
 
         const gameRoomData = new GameRoom({ room_code });
         const gameRoom = await gameRepository.findOneGameRoom(gameRoomData);
-        if (gameRoom === null) throw new Error("방 정보를 찾을 수 없습니다. (room)");
+        if (gameRoom === null) throw new Error("존재하지 않는 방입니다.");
 
         const gameSessionData = new GameSession({ room_id: gameRoom.room_id });
         const gameSession = await gameRepository.findOneGameSession(gameSessionData);

@@ -127,8 +127,8 @@ export default class GameService {
 
             return { success: true };
         } catch (error) {
-            if (error instanceof Error && error.message === "방 정보를 찾을 수 없습니다.") {
-                return { success: false, message: "방 정보를 찾을 수 없습니다." };
+            if (error instanceof Error && error.message === "존재하지 않는 방입니다.") {
+                return { success: false, message: "존재하지 않는 방입니다." };
             }
 
             throw error;
@@ -160,7 +160,6 @@ export default class GameService {
                 // 삭제된 방은 검색하지 않음. ( reulst: null)
                 if (gameRoom !== null) {
                     // 방장이면 방 제거
-                    await transaction.rollback();
                     if (gameSession.user_id === user_id) {
                         gameRoomData.status = 1;
                         await this.gameRepository.updateGameRoom(gameRoomData);
