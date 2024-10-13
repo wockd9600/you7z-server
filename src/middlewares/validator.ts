@@ -6,7 +6,6 @@ import { logError } from "../utils/error";
 export function validateBody(schema: any) {
     return async function (req: Request, res: Response, next: NextFunction) {
         try {
-            console.log(req.body);
             const target = plainToClass(schema, req.body, { excludeExtraneousValues: true });
             await validateOrReject(target);
             req.dto = target;
