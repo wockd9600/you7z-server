@@ -154,8 +154,6 @@ export default class GameController {
             const gameRoomData = new GameSession({ session_id: gameSession.session_id, status: 1, question_order: JSON.stringify(question_order) });
             await this.gameRepository.updateGameSession(gameRoomData, transaction);
 
-            await transaction.commit();
-
             // 노래 시작 시간 치환
             const [hours, minutes, seconds] = song.start_time.split(":").map(Number);
             const start_time = hours * 3600 + minutes * 60 + seconds;
@@ -180,7 +178,9 @@ export default class GameController {
                         RoomTimer.startTimer(roomCode, 50000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
                     } else {
                         if (retryCount < maxRetries) {
+                            console.log("retryCount : ", retryCount);
                             const notAgreeUsers = await gameRedis.getDisagreeUsersNextAction();
+                            console.log("notAgreeUsers : ", notAgreeUsers);
                             if (notAgreeUsers.length !== 0) {
                                 io.to(roomCode).emit("next song", gmaeSongData, notAgreeUsers);
                             }
@@ -202,8 +202,11 @@ export default class GameController {
             };
 
             RoomTimer.startTimer(roomCode, 6000, playSongTimer);
+
+            await transaction.commit();
         } catch (error) {
-            if (transaction) await transaction.rollback();
+            console.log(error);
+            if (transaction) transaction.rollback();
             let message = "알 수 없는 이유로 게임을 시작할 수 없습니다.";
             if (error instanceof Error) {
                 logErrorSocket(error, socket, params);

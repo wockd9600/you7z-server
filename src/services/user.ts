@@ -43,7 +43,6 @@ export default class UserService {
         try {
             // get kakao token
             const token = await axios(options);
-            // console.log(token)
 
             // 받은 토큰으로 유저 정보 받기
             const user = await axios({
@@ -55,7 +54,6 @@ export default class UserService {
             });
 
             const result = user.data;
-            // console.log(user);
 
             return result;
         } catch (error) {

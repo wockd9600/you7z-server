@@ -1,4 +1,4 @@
-import { IsBoolean, IsUrl, IsNumber, IsOptional, IsNotEmpty, IsString, Length, Min, ValidateNested, IsArray, ArrayMinSize, ArrayMaxSize } from "class-validator";
+import { IsBoolean, IsUrl, IsNumber, IsOptional, IsNotEmpty, IsString, Length, Min, ValidateNested, IsArray, ArrayMinSize, ArrayMaxSize, Matches } from "class-validator";
 import { Type, Expose } from "class-transformer";
 
 import Playlist from "../models/Playlist";
@@ -55,6 +55,8 @@ class SongDto {
 
     @Expose()
     @IsString()
+    @Matches(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, { message: 'Time must be in the format HH:MM:SS' })
+
     startTime: string;
 
     @Expose()

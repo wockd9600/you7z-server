@@ -26,14 +26,20 @@ export class GameUserDto {
 export class GameSongDto {
     id: number;
     url: string;
-    startTime: string;
+    startTime: number;
     // description: string;
 
     constructor(data: { song_id: number; url: string; start_time: string; description: string }) {
         const { song_id, url, start_time, description } = data;
         this.id = song_id;
         this.url = url;
-        this.startTime = start_time;
+        console.log(start_time);
+        if (typeof start_time === "string") {
+            const [hours, minutes, seconds] = start_time.split(":").map(Number);
+            this.startTime = hours * 3600 + minutes * 60 + seconds;
+        } else {
+            this.startTime = start_time;
+        }
         // this.description = description;
     }
 }
