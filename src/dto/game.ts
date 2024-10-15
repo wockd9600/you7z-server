@@ -33,7 +33,6 @@ export class GameSongDto {
         const { song_id, url, start_time, description } = data;
         this.id = song_id;
         this.url = url;
-        console.log(start_time);
         if (typeof start_time === "string") {
             const [hours, minutes, seconds] = start_time.split(":").map(Number);
             this.startTime = hours * 3600 + minutes * 60 + seconds;

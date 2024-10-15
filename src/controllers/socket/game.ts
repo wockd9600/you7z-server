@@ -289,6 +289,7 @@ export default class GameController {
     async playSong(io: Namespace, socket: Socket, params: any) {
         // room_code로 session_table row 가져옴
         try {
+            console.log("play song");
             const { userId, roomCode } = socket.data;
 
             // room_code로 session_table row 가져옴
@@ -301,6 +302,7 @@ export default class GameController {
             await gameRedis.setAgreeNextAction(userId);
 
             const isAllAgree = await gameRedis.isALLAgreeNextAction();
+            console.log("is all agree", isAllAgree);
             // --- (redis) 유저들의 동영상 로딩이 전부 준비 되면 ---
             if (isAllAgree) {
                 // (redis) 준비 완료 초기화
