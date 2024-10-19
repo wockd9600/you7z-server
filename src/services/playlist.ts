@@ -9,14 +9,10 @@ import * as dto from "../dto/playlist";
 // type
 import IPlaylistRepository from "../repositories/interfaces/playlist";
 import Playlist from "../models/Playlist";
-import UserPlaylist from "../models/UserPlaylist";
+// import UserPlaylist from "../models/zUserPlaylist";
 
-import { StoreRequestDto, CreateRequestDto, CheckYoutubeLinkRequestDto, DeleteRequestDto } from "../dto/playlist";
+import { CreateRequestDto, CheckYoutubeLinkRequestDto, DeleteRequestDto } from "../dto/playlist";
 import Song from "../models/Song";
-
-interface PlaylistWithDownloaded extends Playlist {
-    "UserPlaylists.downloaded"?: number; // Add your custom property here
-}
 
 export default class PlaylistController {
     constructor(private playlistRepository: IPlaylistRepository) {}
@@ -38,12 +34,8 @@ export default class PlaylistController {
             const playlists = await this.playlistRepository.getPlaylists(limit, offset, user_id, type, search_term);
             if (playlists.length === 0) return [];
 
-            const playlistDtos = playlists.map((playlist: PlaylistWithDownloaded) => {
-                let downloaded = 0;
-                if ("UserPlaylists.downloaded" in playlist) {
-                    downloaded = (playlist["UserPlaylists.downloaded"] as number) || 0;
-                }
-                return new dto.PlayListDto(playlist, downloaded);
+            const playlistDtos = playlists.map((playlist) => {
+                return new dto.PlayListDto(playlist);
             });
 
             const popularResponseDto = new dto.PopularResponseDto(playlistDtos);
@@ -70,30 +62,30 @@ export default class PlaylistController {
     //     }
     // }
 
-    @autobind
-    async storePlaylist(storeRequestDto: StoreRequestDto, user_id: number) {
-        const { id } = storeRequestDto;
+    // @autobind
+    // async storePlaylist(storeRequestDto: StoreRequestDto, user_id: number) {
+    //     const { id } = storeRequestDto;
 
-        try {
-            const userPlaylistData = new UserPlaylist({
-                playlist_id: id,
-                user_id,
-            });
+    //     try {
+    //         const userPlaylistData = new UserPlaylist({
+    //             playlist_id: id,
+    //             user_id,
+    //         });
 
-            const user_playlist = await this.playlistRepository.findOneUserPlaylist(userPlaylistData);
-            if (user_playlist !== null) throw new Error("이미 저장한 플레이 리스트입니다.");
+    //         const user_playlist = await this.playlistRepository.findOneUserPlaylist(userPlaylistData);
+    //         if (user_playlist !== null) throw new Error("이미 저장한 플레이 리스트입니다.");
 
-            await this.playlistRepository.createUserPlaylist(userPlaylistData);
+    //         await this.playlistRepository.createUserPlaylist(userPlaylistData);
 
-            const playlistData = new Playlist({ playlist_id: id });
-            await this.playlistRepository.increaseDownloadCountPlayllist(playlistData);
+    //         const playlistData = new Playlist({ playlist_id: id });
+    //         await this.playlistRepository.increaseDownloadCountPlayllist(playlistData);
 
-            const storeResponseDto = new dto.StoreResponseDto(true);
-            return storeResponseDto;
-        } catch (error) {
-            throw error;
-        }
-    }
+    //         const storeResponseDto = new dto.StoreResponseDto(true);
+    //         return storeResponseDto;
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 
     @autobind
     async createPlaylist(createRequestDto: CreateRequestDto, user_id: number) {
@@ -121,12 +113,12 @@ export default class PlaylistController {
 
             await this.playlistRepository.bulkCreateSong(songEntities, transaction);
 
-            const userPlaylistData = new UserPlaylist({
-                playlist_id: user_playlist.playlist_id,
-                user_id,
-            });
+            // const userPlaylistData = new UserPlaylist({
+            //     playlist_id: user_playlist.playlist_id,
+            //     user_id,
+            // });
 
-            await this.playlistRepository.createUserPlaylist(userPlaylistData, transaction);
+            // await this.playlistRepository.createUserPlaylist(userPlaylistData, transaction);
 
             const createResponseDto = new dto.CreateResponseDto(true);
             await transaction.commit();
@@ -192,23 +184,23 @@ export default class PlaylistController {
         }
     }
 
-    @autobind
-    async removeStoredPlaylist(id: number, user_id: number) {
-        try {
-            const userPlaylistData = new UserPlaylist({ playlist_id: id, user_id });
+    // @autobind
+    // async removeStoredPlaylist(id: number, user_id: number) {
+    //     try {
+    //         const userPlaylistData = new UserPlaylist({ playlist_id: id, user_id });
 
-            const user_playlist = await this.playlistRepository.findOneUserPlaylist(userPlaylistData);
-            if (user_playlist === null) throw new Error("저장한F 플레이리스트가 없습니다.");
+    //         const user_playlist = await this.playlistRepository.findOneUserPlaylist(userPlaylistData);
+    //         if (user_playlist === null) throw new Error("저장한F 플레이리스트가 없습니다.");
 
-            await this.playlistRepository.deleteUserPlaylist(userPlaylistData);
+    //         await this.playlistRepository.deleteUserPlaylist(userPlaylistData);
 
-            const playlistData = new Playlist({ playlist_id: id });
-            await this.playlistRepository.decreaseDownloadCountPlayllist(playlistData);
+    //         const playlistData = new Playlist({ playlist_id: id });
+    //         await this.playlistRepository.decreaseDownloadCountPlayllist(playlistData);
 
-            const deleteStoreResponseDto = new dto.DeleteStoreResponseDto(true);
-            return deleteStoreResponseDto;
-        } catch (error) {
-            throw error;
-        }
-    }
+    //         const deleteStoreResponseDto = new dto.DeleteStoreResponseDto(true);
+    //         return deleteStoreResponseDto;
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 }

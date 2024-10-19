@@ -51,23 +51,23 @@ export default class PlaylistController {
 
     
 
-    @autobind
-    async postStorePlaylist(req: Request, res: Response) {
-        // 저장한 playlist 인지 확인
-        // user id와 playlist id로 저장
+    // @autobind
+    // async postStorePlaylist(req: Request, res: Response) {
+    //     // 저장한 playlist 인지 확인
+    //     // user id와 playlist id로 저장
 
-        try {
-            const user_id = req.user.user_id;
+    //     try {
+    //         const user_id = req.user.user_id;
 
-            const storeRequestDto = req.dto;
-            const storeResponseDto = await this.playlistService.storePlaylist(storeRequestDto, user_id);
+    //         const storeRequestDto = req.dto;
+    //         const storeResponseDto = await this.playlistService.storePlaylist(storeRequestDto, user_id);
 
-            res.status(201).json(storeResponseDto);
-        } catch (error) {
-            if (error instanceof Error) logError(error, req);
-            return res.status(500).json({ message: "저장할 수 없는 플레이 리스트입니다." });
-        }
-    }
+    //         res.status(201).json(storeResponseDto);
+    //     } catch (error) {
+    //         if (error instanceof Error) logError(error, req);
+    //         return res.status(500).json({ message: "저장할 수 없는 플레이 리스트입니다." });
+    //     }
+    // }
 
     @autobind
     async postCreatePlaylist(req: Request, res: Response) {
@@ -127,25 +127,25 @@ export default class PlaylistController {
         }
     }
 
-    @autobind
-    async deleteStorePlaylist(req: Request, res: Response) {
-        // 저장한 playlist 인지 확인
-        // user id와 playlist id로 삭제
+    // @autobind
+    // async deleteStorePlaylist(req: Request, res: Response) {
+    //     // 저장한 playlist 인지 확인
+    //     // user id와 playlist id로 삭제
 
-        try {
-            const user_id = req.user!.user_id;
+    //     try {
+    //         const user_id = req.user!.user_id;
 
-            const id: number = parseInt(req.query.id as string, 10);
-            if (isNaN(id)) throw new Error("ID must be a number");
+    //         const id: number = parseInt(req.query.id as string, 10);
+    //         if (isNaN(id)) throw new Error("ID must be a number");
 
-            const deleteStoreResponseDto = await this.playlistService.removeStoredPlaylist(id, user_id);
+    //         const deleteStoreResponseDto = await this.playlistService.removeStoredPlaylist(id, user_id);
 
-            res.status(200).json(deleteStoreResponseDto);
-        } catch (error) {
-            if (error instanceof Error) logError(error, req);
-            return res.status(500).json({ message: "플레이 리스트를 삭제할 수 없습니다." });
-        }
-    }
+    //         res.status(200).json(deleteStoreResponseDto);
+    //     } catch (error) {
+    //         if (error instanceof Error) logError(error, req);
+    //         return res.status(500).json({ message: "플레이 리스트를 삭제할 수 없습니다." });
+    //     }
+    // }
 
     // 다른 메서드들...
 }

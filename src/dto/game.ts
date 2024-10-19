@@ -44,12 +44,12 @@ export class GameSongDto {
 }
 
 export class GameSettingDto {
-    public playlist: string;
+    public title: string;
     // public gameType: number;
     public targetScore: number;
 
     constructor(gameSession: GameSession, playlist: Playlist) {
-        this.playlist = playlist.title;
+        this.title = playlist.title;
         // this.gameType = gameSession.game_type;
         this.targetScore = gameSession.goal_score;
     }
@@ -92,6 +92,9 @@ class RoomInfo {
     @IsNotEmpty()
     public gameSetting: GameSettingDto;
 
+    @IsOptional()
+    public tempGameSetting: { playlist_id: number; title: string };
+
     @IsNotEmpty()
     public users: GameUserDto[];
 
@@ -103,6 +106,7 @@ class RoomInfo {
         this.roomCode = roomCode;
         this.managerId = managerId;
         this.gameSetting = gameSetting;
+        this.tempGameSetting = { playlist_id: -1, title: "" };
         this.users = gameUsers;
         this.answers = answers;
     }

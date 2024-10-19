@@ -8,7 +8,6 @@ import GameSession from "../../models/GameSession";
 import Song from "../../models/Song";
 import UserProfile from "../../models/UserProfile";
 import Playlist from "../../models/Playlist";
-import UserPlaylist from "../../models/UserPlaylist";
 
 export default class GameRepository implements IGameRepository {
     async findOneGameRoom(gameRoomData: GameRoom) {
@@ -43,18 +42,6 @@ export default class GameRepository implements IGameRepository {
         try {
             return await Playlist.findOne({
                 where: { playlist_id },
-            });
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    async findOneUserPlayList(userPlaylistData: UserPlaylist) {
-        const { user_id } = userPlaylistData;
-
-        try {
-            return await UserPlaylist.findOne({
-                where: { user_id },
             });
         } catch (error) {
             throw error;

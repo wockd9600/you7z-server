@@ -15,7 +15,6 @@ import UserRepository from "../../repositories/implementations/user";
 import GameSession from "../../models/GameSession";
 import Song from "../../models/Song";
 import GameRoom from "../../models/GameRoom";
-import UserPlaylist from "../../models/UserPlaylist";
 import Playlist from "../../models/Playlist";
 import Answer from "../../models/Answer";
 import User from "../../models/User";
@@ -178,9 +177,7 @@ export default class GameController {
                         RoomTimer.startTimer(roomCode, 50000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
                     } else {
                         if (retryCount < maxRetries) {
-                            console.log("retryCount : ", retryCount);
                             const notAgreeUsers = await gameRedis.getDisagreeUsersNextAction();
-                            console.log("notAgreeUsers : ", notAgreeUsers);
                             if (notAgreeUsers.length !== 0) {
                                 io.to(roomCode).emit("next song", gmaeSongData, notAgreeUsers);
                             }
@@ -289,7 +286,6 @@ export default class GameController {
     async playSong(io: Namespace, socket: Socket, params: any) {
         // room_code로 session_table row 가져옴
         try {
-            console.log("play song");
             const { userId, roomCode } = socket.data;
 
             // room_code로 session_table row 가져옴
@@ -302,7 +298,6 @@ export default class GameController {
             await gameRedis.setAgreeNextAction(userId);
 
             const isAllAgree = await gameRedis.isALLAgreeNextAction();
-            console.log("is all agree", isAllAgree);
             // --- (redis) 유저들의 동영상 로딩이 전부 준비 되면 ---
             if (isAllAgree) {
                 // (redis) 준비 완료 초기화
@@ -454,10 +449,6 @@ export default class GameController {
             // 유저가 방장인지 확인
             if (gameSession.status === 1) throw new Error("already started game");
             if (gameSession.user_id !== userId) throw new Error("you're not manager");
-
-            const userPlaylistData = new UserPlaylist({ playlist_id: playlistId, user_id: userId });
-            const isStore = await this.playlistRepository.findOneUserPlaylist(userPlaylistData);
-            if (isStore === null) throw new Error("user don't stored the playlist");
 
             const playlistData = new Playlist({ playlist_id: playlistId });
             const playlist = await this.playlistRepository.findOnePlaylist(playlistData);

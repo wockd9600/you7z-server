@@ -4,48 +4,59 @@ import { Op, Sequelize } from "sequelize";
 import IPlaylistRepository from "../interfaces/playlist";
 
 import Playlist from "../../models/Playlist";
-import UserPlaylist from "../../models/UserPlaylist";
 import Song from "../../models/Song";
 
 enum PlaylistType {
     POPULAR,
-    MY,
+    // MY,
     CREATED,
-    MY_WITH_CREATED,
+    // MY_WITH_CREATED,
 }
 
 export default class PlaylistRepository implements IPlaylistRepository {
     async getPlaylists(limit: number, offset: number, user_id: number, type: number, search_term?: string | undefined) {
         const whereCondition: any = { status: 1 };
-        const includeCondition: any = [];
-        const joinUserPlaylist = {
-            model: UserPlaylist,
-            attributes: [[Sequelize.literal(`CASE WHEN UserPlaylists.playlist_id IS NOT NULL THEN 1 ELSE 0 END `), "downloaded"]],
-            where: { user_id },
-            required: false, // LEFT JOIN
-        };
+        if (search_term) {
+            whereCondition[Op.or] = [
+                { title: { [Op.like]: `%${search_term}%` } },
+                // { description: { [Op.like]: `%${search_term}%` } }
+            ];
+        }
 
-        if (type === PlaylistType.MY) {
-            joinUserPlaylist.required = true;
-            whereCondition.user_id = { [Op.ne]: user_id };
-
-            includeCondition.push(joinUserPlaylist);
-        } else if (type === PlaylistType.MY_WITH_CREATED) {
-            delete whereCondition.status;
-            joinUserPlaylist.required = true;
-            includeCondition.push(joinUserPlaylist);
-        } else if (type === PlaylistType.CREATED) {
+        if (type === PlaylistType.CREATED) {
             delete whereCondition.status;
             whereCondition.user_id = user_id;
-        } else {
-            if (search_term) {
-                whereCondition[Op.or] = [
-                    { title: { [Op.like]: `%${search_term}%` } },
-                    // { description: { [Op.like]: `%${search_term}%` } }
-                ];
-            }
-            includeCondition.push(joinUserPlaylist);
         }
+
+        // const includeCondition: any = [];
+        // const joinUserPlaylist = {
+        //     model: UserPlaylist,
+        //     attributes: [[Sequelize.literal(`CASE WHEN UserPlaylists.playlist_id IS NOT NULL THEN 1 ELSE 0 END `), "downloaded"]],
+        //     where: { user_id },
+        //     required: false, // LEFT JOIN
+        // };
+
+        // if (type === PlaylistType.MY) {
+        // joinUserPlaylist.required = true;
+        // whereCondition.user_id = { [Op.ne]: user_id };
+
+        // includeCondition.push(joinUserPlaylist);
+        // } else if (type === PlaylistType.MY_WITH_CREATED) {
+        // delete whereCondition.status;
+        // joinUserPlaylist.required = true;
+        // includeCondition.push(joinUserPlaylist);
+        // } else if (type === PlaylistType.CREATED) {
+        //     delete whereCondition.status;
+        //     whereCondition.user_id = user_id;
+        // } else {
+        // if (search_term) {
+        //     whereCondition[Op.or] = [
+        //         { title: { [Op.like]: `%${search_term}%` } },
+        //         // { description: { [Op.like]: `%${search_term}%` } }
+        //     ];
+        // }
+        // includeCondition.push(joinUserPlaylist);
+        // }
         // if (created_user_id !== null) {
         //     whereCondition.user_id = created_user_id;
         // }
@@ -60,9 +71,9 @@ export default class PlaylistRepository implements IPlaylistRepository {
                 order: [["download_count", "DESC"]],
                 limit,
                 offset,
-                include: includeCondition,
+                // include: includeCondition,
                 // attributes: ["playlist_id", "title", "description", "length", "download_count", [Sequelize.col("user_playlist.user_id"), "user_id"]],
-                raw: true,
+                // raw: true,
             });
         } catch (error) {
             throw error;
@@ -100,21 +111,21 @@ export default class PlaylistRepository implements IPlaylistRepository {
         }
     }
 
-    async findOneUserPlaylist(user_playlist: UserPlaylist) {
-        try {
-            const { playlist_id, user_id } = user_playlist;
-            const whereCondition: any = {};
+    // async findOneUserPlaylist(user_playlist: UserPlaylist) {
+    //     try {
+    //         const { playlist_id, user_id } = user_playlist;
+    //         const whereCondition: any = {};
 
-            if (playlist_id !== undefined) whereCondition.playlist_id = playlist_id;
-            if (user_id !== undefined) whereCondition.user_id = user_id;
+    //         if (playlist_id !== undefined) whereCondition.playlist_id = playlist_id;
+    //         if (user_id !== undefined) whereCondition.user_id = user_id;
 
-            return await UserPlaylist.findOne({
-                where: whereCondition,
-            });
-        } catch (error) {
-            throw error;
-        }
-    }
+    //         return await UserPlaylist.findOne({
+    //             where: whereCondition,
+    //         });
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 
     async createPlaylist(playlist: Playlist, transaction: Transaction) {
         const { title, description, length, user_id } = playlist;
@@ -125,21 +136,21 @@ export default class PlaylistRepository implements IPlaylistRepository {
         }
     }
 
-    async createUserPlaylist(user_playlist: UserPlaylist, transaction?: Transaction) {
-        const { playlist_id, user_id } = user_playlist;
+    // async createUserPlaylist(user_playlist: UserPlaylist, transaction?: Transaction) {
+    //     const { playlist_id, user_id } = user_playlist;
 
-        try {
-            return await UserPlaylist.create(
-                {
-                    playlist_id,
-                    user_id,
-                },
-                { transaction }
-            );
-        } catch (error) {
-            throw error;
-        }
-    }
+    //     try {
+    //         return await UserPlaylist.create(
+    //             {
+    //                 playlist_id,
+    //                 user_id,
+    //             },
+    //             { transaction }
+    //         );
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 
     async bulkCreateSong(songs: Partial<Song>[], transaction: Transaction) {
         try {
@@ -189,13 +200,13 @@ export default class PlaylistRepository implements IPlaylistRepository {
         }
     }
 
-    async deleteUserPlaylist(user_playlist: UserPlaylist) {
-        const { playlist_id, user_id } = user_playlist;
+    // async deleteUserPlaylist(user_playlist: UserPlaylist) {
+    //     const { playlist_id, user_id } = user_playlist;
 
-        try {
-            await UserPlaylist.destroy({ where: { playlist_id, user_id } });
-        } catch (error) {
-            throw error;
-        }
-    }
+    //     try {
+    //         await UserPlaylist.destroy({ where: { playlist_id, user_id } });
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 }

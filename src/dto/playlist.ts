@@ -27,14 +27,14 @@ export class PlayListDto {
     @Expose()
     @IsOptional()
     @IsNumber()
-    score: number;
+    download_count: number;
 
-    @Expose()
-    @IsOptional()
-    @IsNumber()
-    downloaded: number;
+    // @Expose()
+    // @IsOptional()
+    // @IsNumber()
+    // downloaded: number;
 
-    constructor(playlist: Playlist, downloaded: number) {
+    constructor(playlist: Playlist) {
         if (!playlist) return;
         
         const { playlist_id, title, description, length, download_count } = playlist;
@@ -42,8 +42,8 @@ export class PlayListDto {
         this.description = description;
         this.id = playlist_id;
         this.length = length;
-        this.score = download_count;
-        this.downloaded = downloaded;
+        this.download_count = download_count;
+        // this.downloaded = downloaded;
     }
 }
 
@@ -124,8 +124,8 @@ export class PopularResponseDto extends PlayListResponseDto {}
 export class SearchRequestDto extends PlayListRequestDto {}
 export class SearchResponseDto extends PlayListResponseDto {}
 
-export class StoreRequestDto extends ReferRequestDto {}
-export class StoreResponseDto extends BooleanResponseDto {}
+// export class StoreRequestDto extends ReferRequestDto {}
+// export class StoreResponseDto extends BooleanResponseDto {}
 
 export class CreateRequestDto {
     @Expose()

@@ -13,7 +13,7 @@ import GameRoom from "../models/GameRoom";
 import Song from "../models/Song";
 import GameSession from "../models/GameSession";
 import Playlist from "../models/Playlist";
-import UserPlaylist from "../models/UserPlaylist";
+// import UserPlaylist from "../models/zUserPlaylist";
 
 import { RoomInfoRequestDto } from "../dto/game";
 import Answer from "../models/Answer";
@@ -174,17 +174,20 @@ export default class GameService {
             const gameRoomData = new GameRoom({ room_code });
             const gameRoom = await this.gameRepository.createGameRoom(gameRoomData, transaction);
 
-            const userPlaylistData = new UserPlaylist({ user_id });
-            const userPlaylist = await this.gameRepository.findOneUserPlayList(userPlaylistData);
-            if (userPlaylist === null) {
-                await transaction.rollback();
-                return {
-                    success: false,
-                    message: "저장한 노래모음이 없습니다.",
-                };
-            }
+            // const userPlaylistData = new UserPlaylist({ user_id });
+            // const userPlaylist = await this.gameRepository.findOneUserPlayList(userPlaylistData);
+            // if (userPlaylist === null) {
+            //     await transaction.rollback();
+            //     return {
+            //         success: false,
+            //         message: "저장한 노래모음이 없습니다.",
+            //     };
+            // }
 
-            const gameSessionData = new GameSession({ room_id: gameRoom.room_id, user_id, playlist_id: userPlaylist.playlist_id });
+            // *수정
+            // 마지막에 했던 게임 플레이리스트를 가져올까?
+
+            const gameSessionData = new GameSession({ room_id: gameRoom.room_id, user_id, playlist_id: 16 });
             const gameSession = await this.gameRepository.createGameSession(gameSessionData, transaction);
             if (gameSession === null) throw new Error("방 정보를 찾을 수 없습니다. (GameSession 생성 실패)");
 

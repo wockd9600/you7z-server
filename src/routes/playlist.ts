@@ -7,7 +7,7 @@ import PlaylistController from "../controllers/playlist";
 import { isLoggedIn } from "../middlewares/auth";
 import { validateBody } from "../middlewares/validator";
 
-import { StoreRequestDto, CreateRequestDto, CheckYoutubeLinkRequestDto, DeleteRequestDto } from "../dto/playlist";
+import { CreateRequestDto, CheckYoutubeLinkRequestDto, DeleteRequestDto } from "../dto/playlist";
 
 const router = Router();
 const repository = new PlaylistRepository();
@@ -19,7 +19,7 @@ router.get("/", isLoggedIn, controller.getPopularPlaylist);
 // router.get("/search", isLoggedIn, validateBody(SearchRequestDto), controller.getSearchPlaylist);
 
 /* POST */
-router.post("/store", isLoggedIn, validateBody(StoreRequestDto), controller.postStorePlaylist);
+// router.post("/store", isLoggedIn, validateBody(StoreRequestDto), controller.postStorePlaylist);
 router.post("/create", isLoggedIn, validateBody(CreateRequestDto), controller.postCreatePlaylist);
 router.post("/checkYoutubeLink", isLoggedIn, validateBody(CheckYoutubeLinkRequestDto), controller.postCheckYoutubeLink);
 // router.post("/song/add", controller.postAddSong);
@@ -29,6 +29,6 @@ router.post("/checkYoutubeLink", isLoggedIn, validateBody(CheckYoutubeLinkReques
 router.patch("/delete", isLoggedIn, validateBody(DeleteRequestDto), controller.patchDeletePlaylist);
 
 /* DELETE */
-router.delete("/store", isLoggedIn, controller.deleteStorePlaylist);
+// router.delete("/store", isLoggedIn, controller.deleteStorePlaylist);
 
 export default router;
