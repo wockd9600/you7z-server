@@ -80,20 +80,20 @@ export default class PlaylistRepository implements IPlaylistRepository {
         }
     }
 
-    async getSearchPlaylists(limit: number, offset: number, search_term: string) {
-        try {
-            return await Playlist.findAll({
-                where: {
-                    [Op.or]: [{ title: { [Op.like]: `%${search_term}%` } }, { description: { [Op.like]: `%${search_term}%` } }, { status: 1 }],
-                },
-                order: [["download_count", "DESC"]],
-                limit,
-                offset,
-            });
-        } catch (error) {
-            throw error;
-        }
-    }
+    // async getSearchPlaylists(limit: number, offset: number, search_term: string) {
+    //     try {
+    //         return await Playlist.findAll({
+    //             where: {
+    //                 [Op.or]: [{ title: { [Op.like]: `%${search_term}%` } }, { description: { [Op.like]: `%${search_term}%` } }, { status: 1 }],
+    //             },
+    //             order: [["download_count", "DESC"]],
+    //             limit,
+    //             offset,
+    //         });
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 
     async findOnePlaylist(playlist: Playlist) {
         try {

@@ -222,7 +222,7 @@ export class RedisUtil {
             }
 
             const userKey = `session:${this.session_id}:user:${user_id}`;
-            await redisClient.set(userKey, JSON.stringify({ user_id, order }), { EX: 60 * 60 });
+            await redisClient.set(userKey, JSON.stringify({ user_id, order }), { EX: 120 * 60 });
 
             await this.setUserScore(user_id, 0);
             await this.setUserStatus(user_id, 0);
@@ -245,14 +245,14 @@ export class RedisUtil {
     public async setAgreeNextAction(user_id: number): Promise<void> {
         // 플레이 준비 완료
         const agreeNextActionKey = `session:${this.session_id}:user:${user_id}:agreeNextAction`;
-        await redisClient.set(agreeNextActionKey, "true", { EX: 60 * 60 });
+        await redisClient.set(agreeNextActionKey, "true", { EX: 120 * 60 });
     }
 
     public async setUserScore(user_id: number, score: number) {
         // 유저 스코어 설정
         try {
             const userScoreKey = `session:${this.session_id}:user:${user_id}:score`;
-            await redisClient.set(userScoreKey, score.toString(), { EX: 60 * 60 });
+            await redisClient.set(userScoreKey, score.toString(), { EX: 120 * 60 });
         } catch (error) {
             throw error;
         }
@@ -262,7 +262,7 @@ export class RedisUtil {
         // 유저 스코어 설정
         try {
             const userStatuseKey = `session:${this.session_id}:user:${user_id}:status`;
-            await redisClient.set(userStatuseKey, status.toString(), { EX: 60 * 60 });
+            await redisClient.set(userStatuseKey, status.toString(), { EX: 120 * 60 });
         } catch (error) {
             throw error;
         }
@@ -282,7 +282,7 @@ export class RedisUtil {
 
     public async setPossibleAnswer(value: boolean): Promise<void> {
         const possible_key = `session:${this.session_id}:possible`;
-        await redisClient.set(possible_key, value.toString(), { EX: 60 * 60 });
+        await redisClient.set(possible_key, value.toString(), { EX: 120 * 60 });
     }
 
     // delete

@@ -150,7 +150,7 @@ export default class GameService {
                 gameRedis.deleteUser(user_id);
 
                 // 게임 세션 확인
-                const gameSessionData = new GameSession({ room_id: null, session_id });
+                const gameSessionData = new GameSession({ session_id });
                 const gameSession = await this.gameRepository.findOneGameSession(gameSessionData);
                 if (gameSession === null) throw new Error("invalid game session id");
 
@@ -184,10 +184,24 @@ export default class GameService {
             //     };
             // }
 
-            // *수정
-            // 마지막에 했던 게임 플레이리스트를 가져올까?
+            let playlist_id: number;
 
-            const gameSessionData = new GameSession({ room_id: gameRoom.room_id, user_id, playlist_id: 16 });
+            const previousGameSession = await this.gameRepository.findOneGameSession(new GameSession({ user_id }));
+
+            const previous_playlist_id = previousGameSession?.playlist_id ?? 0;
+            const playlist = previous_playlist_id ?
+                            await this.gameRepository.findOnePlayList(new Playlist({ playlist_id: previous_playlist_id })) :
+                            null;
+
+            if (playlist !== null) {
+                playlist_id = previous_playlist_id;
+            } else {
+                const popularPlaylist = await this.gameRepository.findOnePopularPlayList();
+                if (!popularPlaylist) throw new Error("인기 플레이리스트를 불러올 수 없습니다.");
+                playlist_id = popularPlaylist.playlist_id;
+            }
+
+            const gameSessionData = new GameSession({ room_id: gameRoom.room_id, user_id, playlist_id });
             const gameSession = await this.gameRepository.createGameSession(gameSessionData, transaction);
             if (gameSession === null) throw new Error("방 정보를 찾을 수 없습니다. (GameSession 생성 실패)");
 

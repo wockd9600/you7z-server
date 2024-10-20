@@ -44,13 +44,15 @@ export class GameSongDto {
 }
 
 export class GameSettingDto {
+    public playlist_id: number;
     public title: string;
-    // public gameType: number;
+    public description: string;
     public targetScore: number;
 
     constructor(gameSession: GameSession, playlist: Playlist) {
+        this.playlist_id = playlist.playlist_id;
         this.title = playlist.title;
-        // this.gameType = gameSession.game_type;
+        this.description = playlist.description;
         this.targetScore = gameSession.goal_score;
     }
 }

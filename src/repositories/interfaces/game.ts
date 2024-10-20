@@ -10,7 +10,9 @@ export default interface IGameRepository {
     findOneGameRoom(gameRoomData: GameRoom): Promise<GameRoom | null>;
     findOneGameSession(gameRoomData: GameRoom | GameSession): Promise<GameSession | null>;
     findOnePlayList(playlistData: Playlist): Promise<Playlist | null>;
+    findOnePopularPlayList(): Promise<Playlist | null>;
     // findOneUserPlayList(userPlaylistData: UserPlaylist): Promise<UserPlaylist | null>;
+
     findOneSong(songData: Song): Promise<Song | null>;
     findAllSong(gameRoomData: GameSession): Promise<Song[]>;
     findAllUserName(user_ids: number[]): Promise<UserProfile[]>;

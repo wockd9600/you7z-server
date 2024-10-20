@@ -38,9 +38,9 @@ export default class GameController {
             name = userProfile.nickname;
         }
 
-        const answerData = new Answer({ session_id, user_id: answer_user_id, content: `${name}${message}`, is_alert: 1 });
-        const answer = await this.answerRepository.createAnswer(answerData);
-        const answerDto = new GameAnswerDto({ ...answer.dataValues });
+        const answerData = new Answer({ session_id, answer_id: 0, user_id: answer_user_id, content: `${name}${message}`, is_alert: 1 });
+        // const answer = await this.answerRepository.createAnswer(answerData);
+        const answerDto = new GameAnswerDto({ ...answerData });
 
         return answerDto;
     }
@@ -377,14 +377,11 @@ export default class GameController {
             const userProfile = await this.userRepository.findOneUserProfile(userProfileData);
             if (userProfile === null) throw new Error("don't exist user profile");
 
-            const alertData = { session_id: gameSession.session_id, user_id: userId, answer_user_id: userId, message: "님이 입장했습니다." };
-            const answer = await this.alertAnswer(alertData);
+            // const alertData = { session_id: gameSession.session_id, user_id: userId, answer_user_id: userId, message: "님이 입장했습니다." };
+            // const answer = await this.alertAnswer(alertData);
 
-            // const responseData = { leaveUserId: userId, answer };
-            // io.to(roomCode).emit("leave game", responseData);
-
-            const responseData = { id: user.user_id, userId, nickname: userProfile.nickname, score: 0 };
-            io.to(roomCode).emit("join user", responseData);
+            const userData = { id: user.user_id, userId, nickname: userProfile.nickname, score: 0 };
+            io.to(roomCode).emit("join user", userData);
         } catch (error) {
             let message = "접속할 수 없습니다.";
             if (error instanceof Error) {
@@ -424,8 +421,7 @@ export default class GameController {
             const answer = await this.alertAnswer(alertData);
 
             // 방의 유저들에게 알려줌. 해당 유저는 방에서 강퇴 emit
-            const responseData = { kickedUserId, answer };
-            io.to(roomCode).emit("user kick", responseData);
+            io.to(roomCode).emit("user kick", answer);
         } catch (error) {
             let message = "강퇴할 수 없습니다.";
             if (error instanceof Error) {
@@ -467,7 +463,7 @@ export default class GameController {
 
             // 변경할 설정을 적용한다.
             // 방에 있는 사람들에게 전달 emit
-            const responseData = { playlist: playlist.title, gameType, targetScore, answer };
+            const responseData = { playlist_id: playlistId, title: playlist.title, gameType, targetScore, answer };
             io.to(roomCode).emit("change game setting", responseData);
         } catch (error) {
             let message = "설정을 변경할 수 없습니다.";
