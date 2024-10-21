@@ -6,7 +6,8 @@ const { combine, timestamp, printf, colorize } = winston.format;
 const logDir = "logs"; // logs 디렉토리 하위에 로그 파일 저장
 
 const logFormat = printf((info) => {
-    return `${info.timestamp} ${info.level}: ${info.clientIp || ""} - (${info.user_id || ""}) ${info.method || ""}${info.url || ""} ${info.stack || ""} ${info.message || ""}`;
+    const userId = info.user_id ? ` - (${info.user_id}) ` : "";
+    return `${info.timestamp} ${info.level}:${info.clientIp || ""}${userId}${info.method || ""}${info.url || ""}${info.stack || ""} ${info.message || ""}`;
 });
 /*
  * Log Level

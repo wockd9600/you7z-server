@@ -29,7 +29,7 @@ export default class GameController {
 
     async alertAnswer(data: { session_id: number; user_id?: number; answer_user_id: number; message: string }) {
         const { session_id, user_id, answer_user_id, message } = data;
-
+        
         let name = "";
         if (user_id) {
             const userProfileData = new User({ user_id });
@@ -40,7 +40,7 @@ export default class GameController {
 
         const answerData = new Answer({ session_id, answer_id: 0, user_id: answer_user_id, content: `${name}${message}`, is_alert: 1 });
         // const answer = await this.answerRepository.createAnswer(answerData);
-        const answerDto = new GameAnswerDto({ ...answerData });
+        const answerDto = new GameAnswerDto({ ...answerData.dataValues });
 
         return answerDto;
     }
@@ -54,7 +54,7 @@ export default class GameController {
         try {
             const { gameRoom, gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
             const gameRedis = await createRedisUtil(gameSession.session_id);
-
+            
             // 게임 불가능한 유저일 경우 연결 끊김으로 처리하지 않음.
             if (!gameRedis.isUserInRoom(userId)) return;
 
@@ -538,8 +538,12 @@ export default class GameController {
             if (gameSession.status === 1) throw new Error("already started game");
 
             const gameRedis = await createRedisUtil(gameSession.session_id);
+            
             if (!gameRedis.isUserInRoom(userId)) throw new Error("don't exist user in room");
 
+            const alertData = { session_id: gameSession.session_id, user_id: userId, answer_user_id: userId, message: "님이 나갔습니다." };
+            const answer = await this.alertAnswer(alertData);
+            
             // (redis) 현재 유저들 가져옴
             const users = gameRedis.getUsers();
 
@@ -564,9 +568,6 @@ export default class GameController {
                 const sessionData = new GameSession({ session_id: gameSession.session_id, user_id: nextManagerId });
                 await this.gameRepository.updateGameSession(sessionData);
             }
-
-            const alertData = { session_id: gameSession.session_id, user_id: userId, answer_user_id: userId, message: "님이 나갔습니다." };
-            const answer = await this.alertAnswer(alertData);
 
             const responseData = { leaveUserId: userId, answer, nextManagerId };
             io.to(roomCode).emit("leave game", responseData);
