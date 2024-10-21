@@ -58,7 +58,7 @@ export default class GameRepository implements IGameRepository {
 
     async findOnePopularPlayList() {
         try {
-            return await Playlist.findOne({ order: ["download_count", "DESC"] });
+            return await Playlist.findOne({ order: [["download_count", "DESC"]] });
         } catch (error) {
             throw error;
         }

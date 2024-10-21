@@ -29,7 +29,7 @@ export default class GameController {
 
     async alertAnswer(data: { session_id: number; user_id?: number; answer_user_id: number; message: string }) {
         const { session_id, user_id, answer_user_id, message } = data;
-        
+
         let name = "";
         if (user_id) {
             const userProfileData = new User({ user_id });
@@ -53,8 +53,10 @@ export default class GameController {
 
         try {
             const { gameRoom, gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (!gameRoom || gameRoom.status === 1) return;
+
             const gameRedis = await createRedisUtil(gameSession.session_id);
-            
+
             // 게임 불가능한 유저일 경우 연결 끊김으로 처리하지 않음.
             if (!gameRedis.isUserInRoom(userId)) return;
 
@@ -63,36 +65,49 @@ export default class GameController {
             // if (gameSession.status === 1)
 
             const leaveGameTimeout = async () => {
-                // 게임이 시작되었을 때
-                if (gameSession.status === 1) {
-                    // 연결 끊김 처리
-                    // status 변경
-                    await gameRedis.setUserStatus(userId, -1);
-                    io.to(roomCode).emit("change user status", { userId, status: -1 });
+                try {
+                    const { gameRoom, gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+                    if (!gameRoom || gameRoom.status === 1) return;
 
-                    // 유저의 상태가 모두 0이하일 경우 방 폭파
-                    // 관전자는 카운트에서 제외함.
-                    // 방 나갈 때 게임 세션 말고 게임 테이블도 없애줘야해
-                    const isAllDisconnect = await gameRedis.isALLUserStatus();
-                    if (isAllDisconnect) {
-                        gameRedis.deleteRoom();
-                        const gameRoomData = new GameRoom({ room_id: gameRoom.room_id, status: 1 });
-                        const sessionData = new GameSession({ session_id: gameSession.session_id, status: 1 });
+                    // 게임이 시작되었을 때
+                    if (gameSession.status === 1) {
+                        // 연결 끊김 처리
+                        // status 변경
+                        await gameRedis.setUserStatus(userId, -1);
+                        io.to(roomCode).emit("change user status", { userId, status: -1 });
 
-                        await Promise.all([this.gameRepository.updateGameRoom(gameRoomData), this.gameRepository.updateGameSession(sessionData)]);
+                        // 유저의 상태가 모두 0이하일 경우 방 폭파
+                        // 관전자는 카운트에서 제외함.
+                        // 방 나갈 때 게임 세션 말고 게임 테이블도 없애줘야해
+                        const isAllDisconnect = await gameRedis.isALLUserStatus();
+                        if (isAllDisconnect) {
+                            gameRedis.deleteRoom();
+                            const gameRoomData = new GameRoom({ room_id: gameRoom.room_id, status: 1 });
+                            const sessionData = new GameSession({ session_id: gameSession.session_id, status: 1 });
 
-                        RoomTimer.clearTimer(roomCode);
-                        // 관전자에게 플레이 중인 유저가 모두 나갔다고 알림을 줌.
-                        io.to(roomCode).emit("error", { status: 401, message: "존재하지 않는 방입니다." });
-                        return;
+                            await Promise.all([this.gameRepository.updateGameRoom(gameRoomData), this.gameRepository.updateGameSession(sessionData)]);
+
+                            RoomTimer.clearTimer(roomCode);
+                            // 관전자에게 플레이 중인 유저가 모두 나갔다고 알림을 줌.
+                            io.to(roomCode).emit("error", { status: 401, message: "존재하지 않는 방입니다." });
+                            return;
+                        }
+
+                        UserTimer.clearTimer(userId);
                     }
+                    // 게임이 시작되지 않았을 때
+                    else {
+                        await this.leaveRoom(io, socket, {});
+                        UserTimer.clearTimer(userId);
+                    }
+                } catch (error) {
+                    let message = "연결 해제 오류";
+                    if (error instanceof Error) {
+                        if (error.message === "존재하지 않는 방입니다.") return;
 
-                    UserTimer.clearTimer(userId);
-                }
-                // 게임이 시작되지 않았을 때
-                else {
-                    await this.leaveRoom(io, socket, {});
-                    UserTimer.clearTimer(userId);
+                        logErrorSocket(error, socket, {});
+                        message = error.message;
+                    }
                 }
             };
 
@@ -101,6 +116,8 @@ export default class GameController {
         } catch (error) {
             let message = "연결 해제 오류";
             if (error instanceof Error) {
+                if (error.message === "존재하지 않는 방입니다.") return;
+
                 logErrorSocket(error, socket, {});
                 message = error.message;
             }
@@ -538,12 +555,12 @@ export default class GameController {
             if (gameSession.status === 1) throw new Error("already started game");
 
             const gameRedis = await createRedisUtil(gameSession.session_id);
-            
+
             if (!gameRedis.isUserInRoom(userId)) throw new Error("don't exist user in room");
 
             const alertData = { session_id: gameSession.session_id, user_id: userId, answer_user_id: userId, message: "님이 나갔습니다." };
             const answer = await this.alertAnswer(alertData);
-            
+
             // (redis) 현재 유저들 가져옴
             const users = gameRedis.getUsers();
 
