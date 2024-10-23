@@ -68,15 +68,13 @@ export default function initializeNamespace(io: Namespace) {
             const { token } = params;
             if (!token) throw new Error("로그인 정보가 없습니다.");
 
-            const decoded = await jwt.verify(token);
-            if (typeof decoded === "object" && decoded !== null && "id" in decoded) {
+            const decoded = (await jwt.verify(token)) as { id: number };
+            if (decoded && typeof decoded.id === "number") {
                 socket.data.userId = decoded.id;
                 return next();
             } else {
                 throw new Error("don't exist user_id");
             }
-
-            // *수정 log
         } catch (error) {
             if (error instanceof CustomValidationError) {
                 logErrorSocket(error, socket, params);
@@ -87,7 +85,7 @@ export default function initializeNamespace(io: Namespace) {
                     params.request_cnt += 1;
 
                     if (params.request_cnt > 3) return socket.emit("relogin");
-                    params.event = socket.data.event
+                    params.event = socket.data.event;
                     socket.emit("token expired", params);
                 } else {
                     // logError(error, { socketId: socket.id, event: "unknown" });

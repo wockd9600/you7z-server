@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import autobind from "autobind-decorator";
+import { sanitize } from "express-xss-sanitizer";
 
 import UserService from "../services/user";
 
 import { logError } from "../utils/error";
-import { LoginRequestDto } from "../dto/user";
 
 export default class UserController {
     constructor(private userService: UserService) {}
@@ -80,7 +80,9 @@ export default class UserController {
         const user_id = req.user!.user_id;
 
         try {
-            const userProfileDto = req.dto;
+            const sanitizedContent = sanitize(req.dto.nickname);
+            const userProfileDto = { nickname: sanitizedContent };
+
             await this.userService.setUserName(userProfileDto, user_id);
 
             return res.status(200).json({ success: true });

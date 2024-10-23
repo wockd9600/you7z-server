@@ -1,5 +1,6 @@
 import { Socket, Namespace } from "socket.io";
 import autobind from "autobind-decorator";
+import { sanitize } from "express-xss-sanitizer";
 
 import { sequelize } from "../../modules/sequelize";
 
@@ -27,6 +28,8 @@ export default class AnswerController {
             const { userId, roomCode } = socket.data;
             const { message } = params.data;
 
+            const sanitizedMessage = sanitize(message);
+
             // room_code로 session_table row 가져옴
             const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
 
@@ -40,7 +43,7 @@ export default class AnswerController {
             const newAnswer = await this.answerRepository.createAnswer(answerData, transaction);
 
             // ---------- 게임 시작 전이면 ""답 체크x"" ----------
-            const answerResponseData = { id: newAnswer.answer_id, userId, message, correct: false };
+            const answerResponseData = { id: newAnswer.answer_id, userId, sanitizedMessage, correct: false };
 
             const isPossibleAnswer = await gameRedis.getPossibleAnswer();
 
@@ -69,10 +72,10 @@ export default class AnswerController {
             // console.log(answers);
             // console.log("is answer?! : ", !answers.includes(message));
 
-            const sanitizedAnswers = current_song.answer.replace(/\s+/g, "").toLowerCase().split(",");
-            const sanitizedMessage = message.replace(/\s+/g, "");
+            const replacedAnswers = current_song.answer.replace(/\s+/g, "").toLowerCase().split(",");
+            const replaceedMessage = sanitizedMessage.replace(/\s+/g, "");
 
-            if (!sanitizedAnswers.includes(sanitizedMessage)) {
+            if (!replacedAnswers.includes(replaceedMessage)) {
                 transaction.commit();
                 return io.to(roomCode).emit("submit answer", { answerResponseData });
             }

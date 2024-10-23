@@ -1,5 +1,6 @@
 import { Socket, Namespace } from "socket.io";
 import autobind from "autobind-decorator";
+import { sanitize } from "express-xss-sanitizer";
 
 import { sequelize } from "../../modules/sequelize";
 
@@ -453,7 +454,7 @@ export default class GameController {
     async updateRoomSettings(io: Namespace, socket: Socket, params: any) {
         // user id와 game code, 변경할 key, value를 받는다.
         const { userId, roomCode } = socket.data;
-        const { playlistId, gameType, targetScore } = params.data;
+        const { playlistId, targetScore } = params.data;
 
         try {
             const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
@@ -480,7 +481,7 @@ export default class GameController {
 
             // 변경할 설정을 적용한다.
             // 방에 있는 사람들에게 전달 emit
-            const responseData = { playlist_id: playlistId, title: playlist.title, gameType, targetScore, answer };
+            const responseData = { playlist_id: playlistId, title: playlist.title, targetScore, answer };
             io.to(roomCode).emit("change game setting", responseData);
         } catch (error) {
             let message = "설정을 변경할 수 없습니다.";
@@ -498,12 +499,14 @@ export default class GameController {
         const { name } = params.data;
 
         try {
+            const sanitizedName = sanitize(name);
+
             const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
             if (gameSession.status === 1) throw new Error("already started game");
-            if (name.length > 10) throw new Error("user name is too long");
+            if (sanitizedName.length > 10) throw new Error("user name is too long");
 
             // 방에 있는 사람들에게 user name을 보낸다.
-            const responseData = { userId, name };
+            const responseData = { userId, sanitizedName };
             io.to(roomCode).emit("change user name", responseData);
         } catch (error) {
             let message = "이름을 변경할 수 없습니다.";

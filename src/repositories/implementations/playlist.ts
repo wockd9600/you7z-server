@@ -180,15 +180,15 @@ export default class PlaylistRepository implements IPlaylistRepository {
         }
     }
 
-    async increaseDownloadCountPlayllist(playlist: Playlist) {
-        const { playlist_id } = playlist;
+    // async increaseDownloadCountPlayllist(playlist: Playlist) {
+    //     const { playlist_id } = playlist;
 
-        try {
-            await Playlist.increment({ download_count: 1 }, { where: { playlist_id } });
-        } catch (error) {
-            throw error;
-        }
-    }
+    //     try {
+    //         await Playlist.increment({ download_count: 1 }, { where: { playlist_id } });
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 
     async decreaseDownloadCountPlayllist(playlist: Playlist) {
         const { playlist_id } = playlist;

@@ -14,7 +14,7 @@ export default interface IPlaylistRepository {
     bulkCreateSong(songs: Partial<Song>[], transaction?: Transaction | null): Promise<void>;
 
     updateDeletePlaylist(playlist: Playlist): Promise<void>;
-    increaseDownloadCountPlayllist(playlist: Playlist): Promise<void>;
+    // increaseDownloadCountPlayllist(playlist: Playlist): Promise<void>;
     decreaseDownloadCountPlayllist(playlist: Playlist): Promise<void>;
 
     // deleteUserPlaylist(user_playlist: UserPlaylist): Promise<void>;

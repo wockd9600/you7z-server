@@ -158,4 +158,14 @@ export default class GameRepository implements IGameRepository {
             throw error;
         }
     }
+
+    async increaseDownloadCountPlayllist(playlist: Playlist) {
+        const { playlist_id } = playlist;
+
+        try {
+            await Playlist.increment({ download_count: 1 }, { where: { playlist_id } });
+        } catch (error) {
+            throw error;
+        }
+    }
 }

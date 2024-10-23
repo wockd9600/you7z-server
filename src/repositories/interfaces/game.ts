@@ -22,4 +22,5 @@ export default interface IGameRepository {
 
     updateGameRoom(gameRoomData: GameRoom): Promise<void>;
     updateGameSession(gameRoomData: GameSession, transaction?: Transaction | null): Promise<void>;
+    increaseDownloadCountPlayllist(playlist: Playlist): Promise<void>;
 }

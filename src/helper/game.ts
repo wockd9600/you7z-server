@@ -7,6 +7,7 @@ import Song from "../models/Song";
 import { GameSongDto } from "../dto/game";
 import { Namespace } from "socket.io";
 import { RoomTimer } from "../utils/timer";
+import Playlist from "../models/Playlist";
 
 function generateRoomCode() {
     const length = 6;
@@ -51,6 +52,10 @@ export async function finishGame(gameRepository: IGameRepository, io: Namespace,
         RoomTimer.clearTimer(roomCode);
 
         const { gameRoom, gameSession } = await getGameSessionFromRoomCode(gameRepository, roomCode);
+        
+        const playlistData = new Playlist({ playlist_id: gameSession.playlist_id });
+        await gameRepository.increaseDownloadCountPlayllist(playlistData);
+
         const gameRedis = await createRedisUtil(gameSession.session_id);
 
         // 다 초기화

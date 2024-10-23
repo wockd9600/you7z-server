@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import autobind from "autobind-decorator";
+import { sanitize } from "express-xss-sanitizer";
 
 import PlaylistService from "../services/playlist";
 
@@ -79,7 +80,10 @@ export default class PlaylistController {
         try {
             const user_id = req.user!.user_id;
 
+            // *수정
             const createRequestDto = req.dto;
+            const sanitizedContent = sanitize(req.dto);
+
             const createResponseDto = await this.playlistService.createPlaylist(createRequestDto, user_id);
 
             res.status(201).json(createResponseDto);
