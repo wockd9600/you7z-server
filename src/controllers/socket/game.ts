@@ -113,7 +113,7 @@ export default class GameController {
             };
 
             // const delay = gameSession.status === 1 ? 3000 : 0;
-            UserTimer.startTimer(userId, 3000, leaveGameTimeout);
+            UserTimer.startTimer(userId, 15000, leaveGameTimeout);
         } catch (error) {
             let message = "연결 해제 오류";
             if (error instanceof Error) {
