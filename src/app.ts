@@ -25,9 +25,16 @@ app.use(express.json({ limit: "5mb" }));
 
 app.use(morganMiddleware);
 
-app.get("/health", (req, res) => {
-    // 서버가 정상적으로 작동 중인 경우 200 상태 코드를 반환
-    return res.status(200).send("Healthy");
+// app.get("/health", (req, res) => {
+//     // 서버가 정상적으로 작동 중인 경우 200 상태 코드를 반환
+//     return res.status(200).send("Healthy");
+// });
+
+app.use((req, res, next) => {
+    if (req.ip === "127.0.0.1") {
+        return res.status(403).send("Forbidden");
+    }
+    next();
 });
 
 // let redisStore = new RedisStore({
