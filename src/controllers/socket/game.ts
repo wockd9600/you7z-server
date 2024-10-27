@@ -192,18 +192,18 @@ export default class GameController {
                         // 노래 재생! emit
                         io.to(roomCode).emit("play song");
 
-                        RoomTimer.startTimer(roomCode, 50000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
+                        RoomTimer.startTimer(roomCode, 60000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
                     } else {
                         if (retryCount < maxRetries) {
                             const notAgreeUsers = await gameRedis.getDisagreeUsersNextAction();
                             if (notAgreeUsers.length !== 0) {
                                 io.to(roomCode).emit("next song", gmaeSongData, notAgreeUsers);
                             }
-                            RoomTimer.startTimer(roomCode, 3000, () => playSongTimer(retryCount + 1, maxRetries));
+                            RoomTimer.startTimer(roomCode, 1500, () => playSongTimer(retryCount + 1, maxRetries));
                         } else {
                             // 30번이나 요청해도 안되면 그냥 시작
                             io.to(roomCode).emit("play song");
-                            RoomTimer.startTimer(roomCode, 50000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
+                            RoomTimer.startTimer(roomCode, 60000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
                         }
                     }
                 } catch (error) {
@@ -324,7 +324,7 @@ export default class GameController {
                 gameRedis.deleteAnswerUserId();
 
                 // 노래 재생! emit
-                RoomTimer.startTimer(roomCode, 50000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
+                RoomTimer.startTimer(roomCode, 60000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
                 return io.to(roomCode).emit("play song");
             }
         } catch (error) {

@@ -2,6 +2,8 @@ import "dotenv/config";
 import cors from "cors";
 import express, { Request, Response, NextFunction } from "express";
 import "reflect-metadata";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 // import { sequelize } from "./modules/sequelize";
 // import RedisStore from "connect-redis"
@@ -22,6 +24,7 @@ const app = express();
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "5mb" }));
+app.use(helmet());
 
 app.use(morganMiddleware);
 
@@ -30,8 +33,25 @@ app.use(morganMiddleware);
 //     return res.status(200).send("Healthy");
 // });
 
+app.use(
+    rateLimit({
+        windowMs: 1 * 60 * 1000,
+        max: 100,
+        handler(req, res) {
+            const error = new Error("too many request");
+            logError(error, req);
+
+            res.status(429).json({
+                code: 429,
+                message: "서버 오류",
+            });
+        },
+    })
+);
+
 app.use((req, res, next) => {
-    if (req.ip === "127.0.0.1") {
+    console.log(req.ip);
+    if (req.ip === "127.0.0.1" || req.ip === "::ffff:127.0.0.1") {
         return res.status(403).send("Forbidden");
     }
     next();

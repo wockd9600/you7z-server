@@ -187,7 +187,7 @@ export async function showAnswerAndNextSong(gameRepository: IGameRepository, io:
                     // 노래 재생! emit
                     io.to(roomCode).emit("play song");
 
-                    RoomTimer.startTimer(roomCode, 50000, () => showAnswerAndNextSong(gameRepository, io, roomCode));
+                    RoomTimer.startTimer(roomCode, 60000, () => showAnswerAndNextSong(gameRepository, io, roomCode));
                 } else {
                     if (retryCount < maxRetries) {
                         const notAgreeUsers = await gameRedis.getDisagreeUsersNextAction();

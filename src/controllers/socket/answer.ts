@@ -43,7 +43,7 @@ export default class AnswerController {
             const newAnswer = await this.answerRepository.createAnswer(answerData, transaction);
 
             // ---------- 게임 시작 전이면 ""답 체크x"" ----------
-            const answerResponseData = { id: newAnswer.answer_id, userId, sanitizedMessage, correct: false };
+            const answerResponseData = { id: newAnswer.answer_id, userId, message: sanitizedMessage, correct: false };
 
             const isPossibleAnswer = await gameRedis.getPossibleAnswer();
 
