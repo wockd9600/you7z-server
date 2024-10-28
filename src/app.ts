@@ -25,7 +25,7 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "5mb" }));
 app.use(helmet());
-app.set("trust proxy", true);
+app.set("trust proxy", 1);
 app.use(morganMiddleware);
 
 // app.get("/health", (req, res) => {
@@ -52,7 +52,8 @@ app.use(
 const allowedPaths = ["/user", "/playlist", "/game", "/answer"];
 
 app.use((req, res, next) => {
-    if (!allowedPaths.includes(req.path)) {
+    const isAllowed = allowedPaths.some((path) => req.path.startsWith(path));
+    if (!isAllowed) {
         return res.status(403).send("Forbidden");
     }
     next();
