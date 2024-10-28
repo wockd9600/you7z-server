@@ -50,7 +50,6 @@ app.use(
 );
 
 app.use((req, res, next) => {
-    console.log(req.ip);
     if (req.ip === "127.0.0.1" || req.ip === "::ffff:127.0.0.1") {
         return res.status(403).send("Forbidden");
     }
