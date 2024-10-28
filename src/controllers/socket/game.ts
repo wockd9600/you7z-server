@@ -526,8 +526,7 @@ export default class GameController {
             const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
-            if (!gameRedis.isUserInRoom(userId)) throw new Error("입장하지 않은 방입니다.");
-
+            if (!gameRedis.isUserInRoom(userId)) return socket.emit("error", { status: 401, message: "사라진 방입니다." });
             UserTimer.clearTimer(userId);
             await gameRedis.setUserStatus(userId, 0);
             const isAgree = await gameRedis.getAgreeNextAction(userId);

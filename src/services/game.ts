@@ -57,7 +57,9 @@ export default class GameService {
             // 정보 전달
             const playlistData = new Playlist({ playlist_id: gameSession.playlist_id });
             const gamePlaylist = await this.gameRepository.findOnePlayList(playlistData);
-            if (gamePlaylist === null) throw new Error("방 정보를 찾을 수 없습니다. (Playlist 조회 실패)");
+            if (gamePlaylist === null) {
+                return { success: false, message: "입장하지 않은 방입니다." };
+            }
 
             // --- 시작한 방일 때 ---
             // (redis) 현재 노래 song_id 가져옴
