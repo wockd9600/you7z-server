@@ -152,7 +152,7 @@ export default class GameController {
             const [playlist, songs] = await Promise.all([this.playlistRepository.findOnePlaylist(playlistData), this.gameRepository.findAllSong(sessionData)]);
             if (playlist === null) throw new Error("playlist is null");
             if (songs.length === 0) throw new Error("song length is 0");
-            if (songs.length > gameSession.goal_score) throw new Error("목표 점수가 너무 높습니다.");
+            // if (songs.length > gameSession.goal_score) throw new Error("목표 점수가 너무 높습니다.");
 
             // 랜덤으로 순서를 전부 뽑는다.
             const question_order = generateRandomOrder(songs);
