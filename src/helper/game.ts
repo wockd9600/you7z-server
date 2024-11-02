@@ -52,7 +52,7 @@ export async function finishGame(gameRepository: IGameRepository, io: Namespace,
         RoomTimer.clearTimer(roomCode);
 
         const { gameRoom, gameSession } = await getGameSessionFromRoomCode(gameRepository, roomCode);
-        
+
         const playlistData = new Playlist({ playlist_id: gameSession.playlist_id });
         await gameRepository.increaseDownloadCountPlayllist(playlistData);
 
@@ -131,7 +131,7 @@ export async function showAnswerAndNextSong(gameRepository: IGameRepository, io:
         // 정답을 맞췄으면 다음 곡을 설정할 필요는 없음.
         const isAnswer = await gameRedis.getPossibleAnswer();
 
-        let songResponseData: GameSongDto;
+        let gmaeSongData: GameSongDto;
         if (isAnswer) {
             const song_id = await gameRedis.getCurrentSongId();
             const songData = new Song({ song_id });
@@ -150,9 +150,9 @@ export async function showAnswerAndNextSong(gameRepository: IGameRepository, io:
                 finishGame(gameRepository, io, roomCode);
                 return;
             }
-            songResponseData = new GameSongDto({ ...next_song.dataValues });
+            gmaeSongData = new GameSongDto({ ...next_song.dataValues });
 
-            io.to(roomCode).emit("next song", songResponseData);
+            io.to(roomCode).emit("next song", {gmaeSongData});
         } else {
             // // 현재 곡 정답 알려주기
             // const song_id = await gameRedis.getCurrentSongId();
@@ -192,16 +192,16 @@ export async function showAnswerAndNextSong(gameRepository: IGameRepository, io:
                     if (retryCount < maxRetries) {
                         const notAgreeUsers = await gameRedis.getDisagreeUsersNextAction();
                         if (notAgreeUsers.length !== 0) {
-                            if (!songResponseData) {
+                            if (!gmaeSongData) {
                                 const song_id = await gameRedis.getCurrentSongId();
                                 const songData = new Song({ song_id });
                                 const current_song = await gameRepository.findOneSong(songData);
                                 if (current_song === null) throw new Error("don't exist song");
 
-                                songResponseData = new GameSongDto({ ...current_song.dataValues });
+                                gmaeSongData = new GameSongDto({ ...current_song.dataValues });
                             }
 
-                            io.to(roomCode).emit("next song", songResponseData, notAgreeUsers);
+                            io.to(roomCode).emit("next song", {gmaeSongData, notAgreeUsers});
                         }
                         RoomTimer.startTimer(roomCode, 3000, () => playSongTimer(retryCount + 1, maxRetries));
                     } else {

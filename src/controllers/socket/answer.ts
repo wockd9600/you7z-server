@@ -27,7 +27,7 @@ export default class AnswerController {
             // user id, room_code, answer을 받음.
             const { userId, roomCode } = socket.data;
             const { message } = params.data;
-
+            
             const sanitizedMessage = sanitize(message);
 
             // room_code로 session_table row 가져옴
@@ -95,6 +95,8 @@ export default class AnswerController {
             if (gameSession.goal_score <= user_score || findIndex === orders.length) {
                 io.to(roomCode).emit("submit answer", responseData);
                 finishGame(this.gameRepository, io, roomCode);
+                transaction.commit();
+                return;
             }
 
             const next_song = await setNextSong(this.gameRepository, gameSession, gameRedis);
@@ -102,19 +104,21 @@ export default class AnswerController {
                 transaction.commit();
                 io.to(roomCode).emit("submit answer", responseData);
                 finishGame(this.gameRepository, io, roomCode);
+                transaction.commit();
                 return;
             }
 
             gameRedis.setPossibleAnswer(false);
             gameRedis.setAnswerUserId(userId);
 
-            const songResponseData = new GameSongDto({ ...next_song.dataValues });
-            io.to(roomCode).emit("next song", songResponseData);
+            const gmaeSongData = new GameSongDto({ ...next_song.dataValues });
+            io.to(roomCode).emit("submit answer", responseData);
+
+            io.to(roomCode).emit("next song", { gmaeSongData, resetTimer: false });
 
             transaction.commit();
 
             // answer emit
-            io.to(roomCode).emit("submit answer", responseData);
         } catch (error) {
             transaction.rollback();
             let message = "보내기 오류";

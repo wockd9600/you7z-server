@@ -197,7 +197,7 @@ export default class GameController {
                         if (retryCount < maxRetries) {
                             const notAgreeUsers = await gameRedis.getDisagreeUsersNextAction();
                             if (notAgreeUsers.length !== 0) {
-                                io.to(roomCode).emit("next song", gmaeSongData, notAgreeUsers);
+                                io.to(roomCode).emit("next song", { gmaeSongData, notAgreeUsers });
                             }
                             RoomTimer.startTimer(roomCode, 1500, () => playSongTimer(retryCount + 1, maxRetries));
                         } else {
@@ -308,7 +308,7 @@ export default class GameController {
 
             // room_code로 session_table row 가져옴
             const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
-            if (gameSession.status === 0) throw new Error("not started yet ");
+            if (gameSession.status === 0) throw new Error("게임 시작 전입니다.");
 
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
