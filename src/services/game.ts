@@ -191,9 +191,7 @@ export default class GameService {
             const previousGameSession = await this.gameRepository.findOneGameSession(new GameSession({ user_id }));
 
             const previous_playlist_id = previousGameSession?.playlist_id ?? 0;
-            const playlist = previous_playlist_id ?
-                            await this.gameRepository.findOnePlayList(new Playlist({ playlist_id: previous_playlist_id })) :
-                            null;
+            const playlist = previous_playlist_id ? await this.gameRepository.findOnePlayList(new Playlist({ playlist_id: previous_playlist_id })) : null;
 
             if (playlist !== null) {
                 playlist_id = previous_playlist_id;
@@ -203,7 +201,7 @@ export default class GameService {
                 playlist_id = popularPlaylist.playlist_id;
             }
 
-            const gameSessionData = new GameSession({ room_id: gameRoom.room_id, user_id, playlist_id });
+            const gameSessionData = new GameSession({ room_id: gameRoom.room_id, user_id, playlist_id, goal_score: 15 });
             const gameSession = await this.gameRepository.createGameSession(gameSessionData, transaction);
             if (gameSession === null) throw new Error("방 정보를 찾을 수 없습니다. (GameSession 생성 실패)");
 

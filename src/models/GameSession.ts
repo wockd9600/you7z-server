@@ -66,7 +66,6 @@ GameSession.init(
                 max: 255,
                 min: 5,
             },
-            defaultValue: 15,
         },
         status: {
             type: DataTypes.TINYINT,

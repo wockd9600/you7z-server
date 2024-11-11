@@ -101,7 +101,6 @@ export default class AnswerController {
 
             const next_song = await setNextSong(this.gameRepository, gameSession, gameRedis);
             if (!next_song) {
-                transaction.commit();
                 io.to(roomCode).emit("submit answer", responseData);
                 finishGame(this.gameRepository, io, roomCode);
                 transaction.commit();

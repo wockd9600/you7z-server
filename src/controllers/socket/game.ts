@@ -195,9 +195,9 @@ export default class GameController {
                         RoomTimer.startTimer(roomCode, 60000, () => showAnswerAndNextSong(this.gameRepository, io, roomCode));
                     } else {
                         if (retryCount < maxRetries) {
-                            const notAgreeUsers = await gameRedis.getDisagreeUsersNextAction();
-                            if (notAgreeUsers.length !== 0) {
-                                io.to(roomCode).emit("next song", { gmaeSongData, notAgreeUsers });
+                            const disagreeUsers = await gameRedis.getDisagreeUsersNextAction();
+                            if (disagreeUsers.length !== 0) {
+                                io.to(roomCode).emit("next song", { gmaeSongData, disagreeUsers });
                             }
                             RoomTimer.startTimer(roomCode, 1500, () => playSongTimer(retryCount + 1, maxRetries));
                         } else {
@@ -455,7 +455,7 @@ export default class GameController {
         // user id와 game code, 변경할 key, value를 받는다.
         const { userId, roomCode } = socket.data;
         const { playlistId, targetScore } = params.data;
-
+        
         try {
             const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
 
