@@ -49,11 +49,15 @@ export default class GameController {
     @autobind
     async disconnect(io: Namespace, socket: Socket) {
         const { userId, roomCode } = socket.data;
+        console.log("disconnect id = " + userId);
 
         if (roomCode === undefined || userId === undefined) return;
 
         try {
-            const { gameRoom, gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
+
+            const { gameRoom, gameSession } = response;
             if (!gameRoom || gameRoom.status === 1) return;
 
             const gameRedis = await createRedisUtil(gameSession.session_id);
@@ -67,7 +71,10 @@ export default class GameController {
 
             const leaveGameTimeout = async () => {
                 try {
-                    const { gameRoom, gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+                    const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+                    if (response.status !== 200) return socket.emit("error", response);
+
+                    const { gameRoom, gameSession } = response;
                     if (!gameRoom || gameRoom.status === 1) return;
 
                     // 게임이 시작되었을 때
@@ -129,12 +136,14 @@ export default class GameController {
     @autobind
     async startGame(io: Namespace, socket: Socket, params: any) {
         const transaction = await sequelize.transaction();
-
         // room_code로 session_table row 가져옴
         try {
             const { userId, roomCode } = socket.data;
 
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
+
+            const { gameSession } = response;
 
             // 방장인지 확인
             if (gameSession.user_id !== userId) throw new Error("you're not manager");
@@ -238,8 +247,15 @@ export default class GameController {
             const { userId, roomCode } = socket.data;
 
             // room_code로 session_table row 가져옴
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
-            if (gameSession.status === 0) throw new Error("not started yet");
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
+
+            const { gameSession } = response;
+
+            if (gameSession.status === 0) {
+                let message = "노래를 재생할 수 없습니다.";
+                return socket.emit("error", { status: 401, message });
+            }
 
             const gameRedis = await createRedisUtil(gameSession.session_id);
             if (!gameRedis.isUserInRoom(userId)) throw new Error("don't exist user in room");
@@ -270,8 +286,17 @@ export default class GameController {
             const { userId, roomCode } = socket.data;
 
             // room_code로 session_table row 가져옴
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
-            if (gameSession.status === 0) throw new Error("not started yet");
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
+
+            const { gameSession } = response;
+
+            // *수정 테스트
+            if (gameSession.status === 0) {
+                let message = "노래를 재생할 수 없습니다.";
+                // return;
+                return socket.emit("error", { status: 401, message });
+            }
 
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
@@ -307,8 +332,17 @@ export default class GameController {
             const { userId, roomCode } = socket.data;
 
             // room_code로 session_table row 가져옴
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
-            if (gameSession.status === 0) throw new Error("게임 시작 전입니다.");
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
+
+            const { gameSession } = response;
+
+            // *수정 테스트
+            if (gameSession.status === 0) {
+                let message = "게임 시작 전입니다.";
+                // return;
+                return socket.emit("error", { status: 401, message });
+            }
 
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
@@ -343,7 +377,11 @@ export default class GameController {
             const { userId, roomCode } = socket.data;
 
             // room_code로 session_table row 가져옴
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
+
+            const { gameSession } = response;
+
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
             // (redis) 패스 신청
@@ -380,8 +418,10 @@ export default class GameController {
         const { userId, roomCode } = socket.data;
 
         try {
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
 
+            const { gameSession } = response;
             if (gameSession.status === 1) return;
 
             const gameRedis = await createRedisUtil(gameSession.session_id);
@@ -418,7 +458,10 @@ export default class GameController {
             const { kickedUserId } = params.data;
 
             // room_code로 session_table row 가져옴
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
+
+            const { gameSession } = response;
 
             // 게임 중이면 강퇴x
             // 유저가 방장인지 확인
@@ -455,9 +498,12 @@ export default class GameController {
         // user id와 game code, 변경할 key, value를 받는다.
         const { userId, roomCode } = socket.data;
         const { playlistId, targetScore } = params.data;
-        
+
         try {
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
+
+            const { gameSession } = response;
 
             // 시작한 방인지 확인함.
             // 유저가 방장인지 확인
@@ -501,7 +547,10 @@ export default class GameController {
         try {
             const sanitizedName = sanitize(name);
 
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
+
+            const { gameSession } = response;
             if (gameSession.status === 1) throw new Error("already started game");
             if (sanitizedName.length > 10) throw new Error("user name is too long");
 
@@ -523,7 +572,10 @@ export default class GameController {
         const { userId, roomCode } = socket.data;
 
         try {
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
+
+            const { gameSession } = response;
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
             if (!gameRedis.isUserInRoom(userId)) return socket.emit("error", { status: 401, message: "사라진 방입니다." });
@@ -551,8 +603,10 @@ export default class GameController {
             const { userId, roomCode } = socket.data;
 
             // room_code로 session_table row 가져옴
-            const { gameRoom, gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
 
+            const { gameRoom, gameSession } = response;
             // 시작했으면 나갈 수 없음.
             if (gameSession.status === 1) throw new Error("already started game");
 

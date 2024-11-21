@@ -73,34 +73,36 @@ export default class UserService {
     @autobind
     async loginOrSignUp(loginDto: LoginRequestDto) {
         const { code } = loginDto;
-
-        const transaction = await sequelize.transaction();
+        let transaction = null;
 
         try {
             const kakao_user = await this.getKaKaoUserInfo(code);
             if (kakao_user.err) throw new Error(kakao_user.err);
+            // const kakao_user = { id: code };
 
             const userData = new User({
                 kakao_id: kakao_user.id,
                 refresh_token: encrypt().toString(),
             });
 
+            transaction = await sequelize.transaction();
             const [user, created] = await this.userRepository.findOrCreateUser(userData, transaction);
             userData.user_id = user.user_id;
 
-            const userProfileData = new UserProfile({
-                user_id: user.user_id,
-            });
-
+            let nickname: string;
             if (created) {
-                userProfileData.nickname = this.generateRandomNickname();
+                nickname = this.generateRandomNickname();
+                const userProfileData = new UserProfile({ user_id: user.user_id, nickname });
                 await this.userRepository.createUserProfile(userProfileData, transaction);
             } else {
-                await this.userRepository.updateUserRefreshToken(userData, transaction);
-                const userProfile = await this.userRepository.findOneUserProfile(userData);
+                const [_, userProfile] = await Promise.all([
+                    this.userRepository.updateUserRefreshToken(userData),
+                    this.userRepository.findOneUserProfile(userData)
+                ]);
+                
                 if (userProfile === null) throw new Error("don't exist user profile");
 
-                userProfileData.nickname = userProfile?.nickname;
+                nickname = userProfile?.nickname;
             }
 
             const access_token = await jwt.sign({ user_id: user.user_id });
@@ -108,14 +110,14 @@ export default class UserService {
             const loginResponseDto = new LoginResponseDto();
             loginResponseDto.access_token = access_token;
             loginResponseDto.refresh_token = userData.refresh_token;
-            loginResponseDto.nickname = userProfileData.nickname;
+            loginResponseDto.nickname = nickname;
             loginResponseDto.userId = user.user_id;
 
             await transaction.commit();
 
             return loginResponseDto;
         } catch (error) {
-            await transaction.rollback();
+            if (transaction) transaction.rollback();
             throw error;
         }
     }

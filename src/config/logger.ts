@@ -7,7 +7,7 @@ const logDir = "logs"; // logs 디렉토리 하위에 로그 파일 저장
 
 const logFormat = printf((info) => {
     const userId = info.user_id ? ` - (${info.user_id}) ` : "";
-    return `${info.timestamp} ${info.level}:${info.clientIp || ""}${userId}${info.method || ""}${info.url || ""}${info.stack || ""} ${info.message || ""}`;
+    return `${info.timestamp} ${info.level}:${info.clientIp || ""}${userId}${info.method || ""}${info.url || ""} ${info.stack || ""} ${info.message || ""}`;
 });
 /*
  * Log Level

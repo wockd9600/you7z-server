@@ -27,16 +27,21 @@ export default class AnswerController {
             // user id, room_code, answer을 받음.
             const { userId, roomCode } = socket.data;
             const { message } = params.data;
-            
+
             const sanitizedMessage = sanitize(message);
 
             // room_code로 session_table row 가져옴
-            const { gameSession } = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            const response = await getGameSessionFromRoomCode(this.gameRepository, roomCode);
+            if (response.status !== 200) return socket.emit("error", response);
+            const { gameSession } = response;
 
             const gameRedis = await createRedisUtil(gameSession.session_id);
 
             // (redis) 유저가 있는지 확인
-            if (!gameRedis.isUserInRoom(userId)) throw new Error("don't exist user in game room");
+            if (!gameRedis.isUserInRoom(userId)) {
+                transaction.commit();
+                return;
+            }
 
             // answer 테이블에 작성
             const answerData = new Answer({ session_id: gameSession.session_id, user_id: userId, content: message });

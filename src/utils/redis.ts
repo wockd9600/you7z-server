@@ -29,14 +29,24 @@ export class RedisUtil {
         }
     }
 
-    // static async deleteUserInOtherRoom(session_id: number, user_id: number): Promise<void> {
-    //     try {
-    //         const key = `session:${session_id}:user:${user_id}`;
-    //         await redisClient.del(key);
-    //     } catch (error) {
-    //         throw error;
-    //     }
-    // }
+    static async deleteUserInOtherRoom(user_id: number): Promise<void> {
+        try {
+            const pattern = `session:*:user:${user_id}`;
+            const keys = await redisClient.keys(pattern);
+
+            if (keys.length > 0) {
+                keys.map((key) => redisClient.del(key));
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    public async test(): Promise<void> {
+        const pattern = `session:${this.session_id}:user:*`;
+        const keys = await redisClient.keys(pattern);
+        console.log(keys);
+    }
 
     public async initialize(): Promise<void> {
         // 현재 유저들 가져옴 "session:{session_id}:user"
@@ -83,14 +93,14 @@ export class RedisUtil {
 
     public async isStart(): Promise<boolean> {
         const connectedUsers = await this.getConnectedUsers();
-        return connectedUsers.length >= 2 && connectedUsers.length <= 8;
+        return connectedUsers.length >= 2 && connectedUsers.length <= 7;
     }
 
     public checkUserCount(min: number): boolean {
         // 인원수 문제 없는지 확인
         // 현재 유저들 가져옴
         // 1 < length < 8
-        return this.users.length >= min && this.users.length <= 8;
+        return this.users.length >= min && this.users.length <= 7;
     }
 
     // get
@@ -229,9 +239,10 @@ export class RedisUtil {
 
             const pattern = `session:${this.session_id}:user:*`;
             const keys = await redisClient.keys(pattern);
+            const filteredKeys = keys.filter((key) => /^session:\d+:user:\d+$/.test(key));
 
-            if (keys.length > 8) {
-                this.deleteUser(user_id);
+            if (filteredKeys.length > 7) {
+                await this.deleteUser(user_id);
                 throw new Error("가득찬 방입니다.");
             }
 
@@ -292,7 +303,10 @@ export class RedisUtil {
             this.deleteAnswerUserId();
             this.deleteSong();
 
-            await Promise.all(this.users.map((user) => this.deleteUser(user.user_id)));
+            // await Promise.all(this.users.map((user) => this.deleteUser(user.user_id)));
+            for (const user of this.users) {
+                await this.deleteUser(user.user_id); // 각 유저 삭제 완료 후 다음 유저 삭제
+            }
         } catch (error) {
             throw error;
         }
@@ -318,8 +332,10 @@ export class RedisUtil {
             const userStatusKey = `session:${this.session_id}:user:${user_id}:status`;
 
             // 병렬로 Redis 키 삭제
-            await Promise.all([redisClient.del(userKey), redisClient.del(userScoreKey), redisClient.del(userStatusKey)]);
-
+            // await Promise.all([redisClient.del(userKey), redisClient.del(userScoreKey), redisClient.del(userStatusKey)]);
+            await redisClient.del(userKey);
+            await redisClient.del(userScoreKey);
+            await redisClient.del(userStatusKey);
             // 유저 목록 필터링
             this.users = this.users.filter((user) => user.user_id !== user_id);
         } catch (error) {

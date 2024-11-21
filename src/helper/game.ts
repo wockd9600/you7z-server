@@ -48,10 +48,15 @@ export function mergeUserDetails(names: { user_id: number; nickname: string }[],
 }
 
 export async function finishGame(gameRepository: IGameRepository, io: Namespace, roomCode: string) {
+    // *수정 테스트
+    // console.log(" game finish");
     try {
         RoomTimer.clearTimer(roomCode);
 
-        const { gameRoom, gameSession } = await getGameSessionFromRoomCode(gameRepository, roomCode);
+        const response = await getGameSessionFromRoomCode(gameRepository, roomCode);
+        if (response.status !== 200) throw new Error(response.message);
+
+        const { gameRoom, gameSession } = response;
 
         // 세션 변경
         const sesseionData = {
@@ -133,7 +138,11 @@ export async function finishGame(gameRepository: IGameRepository, io: Namespace,
 
 export async function showAnswerAndNextSong(gameRepository: IGameRepository, io: Namespace, roomCode: string) {
     try {
-        const { gameRoom, gameSession } = await getGameSessionFromRoomCode(gameRepository, roomCode);
+        const response = await getGameSessionFromRoomCode(gameRepository, roomCode);
+        if (response.status !== 200) throw new Error(response.message);
+
+        const { gameRoom, gameSession } = response;
+
         const gameRedis = await createRedisUtil(gameSession.session_id);
 
         // 이미 끝났거나 시작하기 전이면 취소
@@ -303,20 +312,23 @@ export async function fetchGameRoomUsersData(gameRepository: IGameRepository, re
     }
 }
 
-export async function getGameSessionFromRoomCode(gameRepository: IGameRepository, room_code: string) {
+type GameSessionResponse = { status: 200; gameRoom: GameRoom; gameSession: GameSession } | { status: 400 | 401 | 404; message: string };
+export async function getGameSessionFromRoomCode(gameRepository: IGameRepository, room_code: string): Promise<GameSessionResponse> {
     try {
-        if (!room_code) throw new Error(`${getGameSessionFromRoomCode} room_code: ${room_code}`);
-
+        if (!room_code) {
+            return { status: 400, message: "room_code is missing." };
+        }
         const gameRoomData = new GameRoom({ room_code });
         const gameRoom = await gameRepository.findOneGameRoom(gameRoomData);
-        if (gameRoom === null) throw new Error("존재하지 않는 방입니다.");
+        if (!gameRoom) {
+            return { status: 401, message: "존재하지 않는 방입니다." };
+        }
 
         const gameSessionData = new GameSession({ room_id: gameRoom.room_id });
         const gameSession = await gameRepository.findOneGameSession(gameSessionData);
-
         if (gameSession === null) throw new Error("방 정보를 찾을 수 없습니다.");
 
-        return { gameRoom, gameSession };
+        return { status: 200, gameRoom, gameSession };
     } catch (error) {
         throw error;
     }

@@ -42,7 +42,7 @@ export default morgan(customMorganFormat, {
             logger.info(message.trim());
         },
     },
-    skip: (req: Request, res) => req.path === "/health", // /health 경로는 로깅하지 않도록 설정
+    skip: (req: Request, res) => req.path === "/health" || res.statusCode !== 200, // /health 경로는 로깅하지 않도록 설정
 });
 
 // export default morgan(':remote-addr - :remote-user ":method :url HTTP/:http-version" :status :res[content-length] - :response-time ms', {

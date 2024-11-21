@@ -63,6 +63,7 @@ export default function initializeNamespace(io: Namespace) {
             // console.log(params);
             // logger.info(`socket on ${params}`);
 
+            // *수정 테스트
             if (schema) await validateParams(schema, params);
 
             const { token } = params;
@@ -76,6 +77,7 @@ export default function initializeNamespace(io: Namespace) {
                 throw new Error("don't exist user_id");
             }
         } catch (error) {
+            console.log(error);
             if (error instanceof CustomValidationError) {
                 logErrorSocket(error, socket, params);
                 socket.emit("validation error", error);
@@ -99,17 +101,33 @@ export default function initializeNamespace(io: Namespace) {
 
     io.on("connection", (socket: Socket) => {
         const roomCode = socket.handshake.query.roomCode as string | undefined;
+
         if (roomCode) {
             socket.data.roomCode = roomCode;
             socket.join(roomCode);
         } else {
+            // *수정 테스트
             socket.disconnect();
         }
 
-        socket.onAny((event, ...args) => {
-            socket.data.event = event;
-            // console.log(`[${socket.data.roomCode}] ${event}`)
-        });
+        // socket.onAny((event, ...args) => {
+        //     socket.data.event = event;
+        //     console.log(`[${socket.data.roomCode}] ${event}`, args);
+        // });
+
+        // *수정 테스트
+        // socket.on("join room", (params) => {
+        //     const { id, roomCode } = params;
+
+        //     if (roomCode) {
+        //         socket.data.userId = parseInt(id);
+        //         socket.data.roomCode = roomCode;
+        //         socket.join(roomCode);
+        //         socket.emit("test");
+        //     } else {
+        //         socket.disconnect();
+        //     }
+        // });
 
         socket.on("disconnect", () => gameController.disconnect(io, socket));
 
