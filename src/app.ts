@@ -26,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "5mb" }));
 app.use(helmet());
 app.set("trust proxy", 1);
+// *수정 테스트
 app.use(morganMiddleware);
 
 // app.get("/health", (req, res) => {
@@ -35,8 +36,8 @@ app.use(morganMiddleware);
 
 app.use(
     rateLimit({
-        windowMs: 1 * 60 * 1000,
-        max: 100,
+        windowMs: 1 * 1000,
+        max: 1000,
         handler(req, res) {
             const error = new Error("too many request");
             logError(error, req);
@@ -45,9 +46,22 @@ app.use(
                 code: 429,
                 message: "서버 오류",
             });
+
+            process.exit(1); // 서버 종료
         },
     })
 );
+
+
+app.get("/memory", (req, res) => {
+    const memoryUsage = process.memoryUsage();
+    res.json({
+        rss: memoryUsage.rss, // 전체 메모리 사용량
+        heapTotal: memoryUsage.heapTotal, // 힙 총 메모리
+        heapUsed: memoryUsage.heapUsed, // 사용 중인 힙 메모리
+        external: memoryUsage.external, // 외부 메모리 사용량
+    });
+});
 
 const allowedPaths = ["/user", "/playlist", "/game", "/answer"];
 
@@ -58,6 +72,7 @@ app.use((req, res, next) => {
     }
     next();
 });
+
 
 // let redisStore = new RedisStore({
 //     client: redisClient,
@@ -84,7 +99,8 @@ app.use("/game", gameRoute);
 app.use("/answer", answerRoute);
 
 app.use((req, res, next) => {
-    const error = new Error("404 error");
+    const error = Error("404 error");
+    error.stack = "";
     logError(error, req);
     return res.status(404).send("Sorry cant find that!");
 });

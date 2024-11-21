@@ -16,7 +16,7 @@ export default class GameController {
 
             const result = await this.gameService.getRoomInfo(roomCode, user_id);
 
-            if (result.success) {
+            if (result.status === 200) {
                 res.status(200).json(result);
             } else {
                 res.status(200).json(result);

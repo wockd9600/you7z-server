@@ -48,15 +48,36 @@ export function mergeUserDetails(names: { user_id: number; nickname: string }[],
 }
 
 export async function finishGame(gameRepository: IGameRepository, io: Namespace, roomCode: string) {
+    // *수정 테스트
+    // console.log(" game finish");
     try {
         RoomTimer.clearTimer(roomCode);
 
-        const { gameRoom, gameSession } = await getGameSessionFromRoomCode(gameRepository, roomCode);
+        const response = await getGameSessionFromRoomCode(gameRepository, roomCode);
+        if (response.status !== 200) throw new Error(response.message);
+
+        const { gameRoom, gameSession } = response;
+
+        // 세션 변경
+        const sesseionData = {
+            room_id: gameSession.room_id,
+            playlist_id: gameSession.playlist_id,
+            user_id: gameSession.user_id,
+            question_order: null,
+            game_type: gameSession.game_type,
+            goal_score: gameSession.goal_score,
+            status: 0,
+        };
+
+        const gameSessionData = new GameSession(sesseionData);
+        const newGameSession = await gameRepository.createGameSession(gameSessionData);
+        if (newGameSession === null) throw new Error("방 정보를 찾을 수 없습니다. (GameSession 생성 실패)");
 
         const playlistData = new Playlist({ playlist_id: gameSession.playlist_id });
         await gameRepository.increaseDownloadCountPlayllist(playlistData);
 
         const gameRedis = await createRedisUtil(gameSession.session_id);
+        await gameRedis.resetAgreeNextAction();
 
         // 다 초기화
         // 방장이 연결끊김 상태면 다른 사람을 방장으로
@@ -95,21 +116,13 @@ export async function finishGame(gameRepository: IGameRepository, io: Namespace,
             return;
         }
 
+        // 방장 변경
         const managerId = newUsers[0].user_id;
-
-        // 세션 변경
-        const sesseionData = {
-            room_id: gameSession.room_id,
-            playlist_id: gameSession.playlist_id,
-            user_id: managerId,
-            question_order: null,
-            game_type: gameSession.game_type,
-            goal_score: gameSession.goal_score,
-            status: 0,
-        };
-        const gameSessionData = new GameSession(sesseionData);
-        const newGameSession = await gameRepository.createGameSession(gameSessionData);
-        if (newGameSession === null) throw new Error("방 정보를 찾을 수 없습니다. (GameSession 생성 실패)");
+        if (gameSession.user_id !== managerId) {
+            const sesseionUpdateData = { user_id: managerId };
+            const gameSessionUpdateData = new GameSession(sesseionUpdateData);
+            await gameRepository.updateGameSession(gameSessionUpdateData);
+        }
 
         const newGameRedis = await createRedisUtil(newGameSession.session_id);
         newUsers.forEach(async (user) => {
@@ -125,8 +138,15 @@ export async function finishGame(gameRepository: IGameRepository, io: Namespace,
 
 export async function showAnswerAndNextSong(gameRepository: IGameRepository, io: Namespace, roomCode: string) {
     try {
-        const { gameRoom, gameSession } = await getGameSessionFromRoomCode(gameRepository, roomCode);
+        const response = await getGameSessionFromRoomCode(gameRepository, roomCode);
+        if (response.status !== 200) throw new Error(response.message);
+
+        const { gameRoom, gameSession } = response;
+
         const gameRedis = await createRedisUtil(gameSession.session_id);
+
+        // 이미 끝났거나 시작하기 전이면 취소
+        if (gameSession.status === 0) return;
 
         // 정답을 맞췄으면 다음 곡을 설정할 필요는 없음.
         const isAnswer = await gameRedis.getPossibleAnswer();
@@ -152,7 +172,7 @@ export async function showAnswerAndNextSong(gameRepository: IGameRepository, io:
             }
             gmaeSongData = new GameSongDto({ ...next_song.dataValues });
 
-            io.to(roomCode).emit("next song", {gmaeSongData});
+            io.to(roomCode).emit("next song", { gmaeSongData });
         } else {
             // // 현재 곡 정답 알려주기
             // const song_id = await gameRedis.getCurrentSongId();
@@ -162,6 +182,7 @@ export async function showAnswerAndNextSong(gameRepository: IGameRepository, io:
             // if (current_song === null) throw new Error(`show answer and next song don't exist song, song id : ${song_id}`);
             // const answerSongResponseData = { answer: current_song.answer[0], description: current_song.description };
             // io.to(roomCode).emit("submit answer", { answerSongResponseData });
+            io.to(roomCode).emit("next song");
         }
 
         const playSongTimer = async (retryCount = 0, maxRetries = 10) => {
@@ -190,8 +211,8 @@ export async function showAnswerAndNextSong(gameRepository: IGameRepository, io:
                     RoomTimer.startTimer(roomCode, 60000, () => showAnswerAndNextSong(gameRepository, io, roomCode));
                 } else {
                     if (retryCount < maxRetries) {
-                        const notAgreeUsers = await gameRedis.getDisagreeUsersNextAction();
-                        if (notAgreeUsers.length !== 0) {
+                        const disagreeUsers = await gameRedis.getDisagreeUsersNextAction();
+                        if (disagreeUsers.length !== 0) {
                             if (!gmaeSongData) {
                                 const song_id = await gameRedis.getCurrentSongId();
                                 const songData = new Song({ song_id });
@@ -201,7 +222,7 @@ export async function showAnswerAndNextSong(gameRepository: IGameRepository, io:
                                 gmaeSongData = new GameSongDto({ ...current_song.dataValues });
                             }
 
-                            io.to(roomCode).emit("next song", {gmaeSongData, notAgreeUsers});
+                            io.to(roomCode).emit("next song", { gmaeSongData, disagreeUsers });
                         }
                         RoomTimer.startTimer(roomCode, 3000, () => playSongTimer(retryCount + 1, maxRetries));
                     } else {
@@ -291,20 +312,23 @@ export async function fetchGameRoomUsersData(gameRepository: IGameRepository, re
     }
 }
 
-export async function getGameSessionFromRoomCode(gameRepository: IGameRepository, room_code: string) {
+type GameSessionResponse = { status: 200; gameRoom: GameRoom; gameSession: GameSession } | { status: 400 | 401 | 404; message: string };
+export async function getGameSessionFromRoomCode(gameRepository: IGameRepository, room_code: string): Promise<GameSessionResponse> {
     try {
-        if (!room_code) throw new Error(`${getGameSessionFromRoomCode} room_code: ${room_code}`);
-
+        if (!room_code) {
+            return { status: 400, message: "room_code is missing." };
+        }
         const gameRoomData = new GameRoom({ room_code });
         const gameRoom = await gameRepository.findOneGameRoom(gameRoomData);
-        if (gameRoom === null) throw new Error("존재하지 않는 방입니다.");
+        if (!gameRoom) {
+            return { status: 401, message: "존재하지 않는 방입니다." };
+        }
 
         const gameSessionData = new GameSession({ room_id: gameRoom.room_id });
         const gameSession = await gameRepository.findOneGameSession(gameSessionData);
-
         if (gameSession === null) throw new Error("방 정보를 찾을 수 없습니다.");
 
-        return { gameRoom, gameSession };
+        return { status: 200, gameRoom, gameSession };
     } catch (error) {
         throw error;
     }

@@ -6,7 +6,7 @@ export function logError(error: Error, req: Request) {
     // Structured logging to capture useful information
     // console.log("log error ", error);
     logger.error({
-        message: `${error}`,
+        message: `${error.message}`,
         method: req.method,
         user_id: req.user?.user_id || -1,
         url: req.originalUrl,
@@ -18,7 +18,7 @@ export function logError(error: Error, req: Request) {
 export function logErrorSocket(error: Error, socket: Socket, params: any) {
     // Structured logging to capture useful information
     const clientIp = socket.handshake.headers["x-forwarded-for"] || socket.handshake.address;
-    const url = params.event;
+    const url = params?.event || "not url";
     // console.log(error);
     logger.error({
         message: error.message,
