@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  // useAliasForPrismaClient = true
 }
 
 datasource db {
@@ -7,52 +8,56 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model game_room {
-  room_id      Int            @id @default(autoincrement())
-  room_code    String         @db.VarChar(16)
-  status       Int            @default(0) @db.TinyInt
-  created_at   DateTime       @db.DateTime(0)
-  game_session game_session[]
+model GameRoom {
+  room_id      Int           @id @default(autoincrement())
+  room_code    String        @db.VarChar(16)
+  status       Int           @default(0) @db.TinyInt
+  created_at   DateTime      @db.DateTime(0)
+  game_session GameSession[]
+
+  @@map("game_room")
 }
 
-model game_session {
-  session_id     Int           @id @default(autoincrement())
+model GameSession {
+  session_id     Int          @id @default(autoincrement())
   room_id        Int
   user_id        Int
   playlist_id    Int
-  question_order String?       @db.VarChar(255)
-  game_type      Int           @default(1) @db.TinyInt
-  goal_score     Int           @default(15) @db.UnsignedTinyInt
-  status         Int           @default(0) @db.TinyInt
-  created_at     DateTime      @db.DateTime(0)
-  game_room      game_room     @relation(fields: [room_id], references: [room_id], onUpdate: Restrict, map: "game_session_ibfk_1")
-  user           user          @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "game_session_ibfk_2")
-  playlist       playlist      @relation(fields: [playlist_id], references: [playlist_id], onUpdate: Restrict, map: "game_session_ibfk_3")
-  user_answer    user_answer[]
-  user_score     user_score[]
+  question_order String?      @db.VarChar(255)
+  game_type      Int          @default(1) @db.TinyInt
+  goal_score     Int          @default(15) @db.UnsignedTinyInt
+  status         Int          @default(0) @db.TinyInt
+  created_at     DateTime     @db.DateTime(0)
+  game_room      GameRoom     @relation(fields: [room_id], references: [room_id], onUpdate: Restrict, map: "game_session_ibfk_1")
+  user           User         @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "game_session_ibfk_2")
+  playlist       Playlist     @relation(fields: [playlist_id], references: [playlist_id], onUpdate: Restrict, map: "game_session_ibfk_3")
+  user_answer    UserAnswer[]
+  user_score     UserScore[]
 
   @@index([playlist_id], map: "playlist_id")
   @@index([room_id], map: "room_id")
   @@index([user_id], map: "user_id")
+  @@map("game_session")
 }
 
-model playlist {
-  playlist_id    Int            @id @default(autoincrement())
+model Playlist {
+  playlist_id    Int           @id @default(autoincrement())
   user_id        Int
-  title          String         @db.VarChar(45)
-  description    String?        @db.VarChar(300)
-  length         Int?           @db.TinyInt
-  download_count Int            @default(0) @db.TinyInt
-  status         Int            @default(0) @db.TinyInt
-  created_at     DateTime       @db.DateTime(0)
-  game_session   game_session[]
-  user           user           @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "playlist_ibfk_1")
-  song           song[]
+  title          String        @db.VarChar(45)
+  description    String?       @db.VarChar(300)
+  length         Int?          @db.TinyInt
+  download_count Int           @default(0) @db.TinyInt
+  status         Int           @default(0) @db.TinyInt
+  created_at     DateTime      @db.DateTime(0)
+  game_session   GameSession[]
+  user           User          @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "playlist_ibfk_1")
+  song           Song[]
 
   @@index([user_id], map: "user_id")
+  @@map("playlist")
 }
 
-model song {
+model Song {
   song_id     Int      @id @default(autoincrement())
   playlist_id Int
   url         String   @db.VarChar(128)
@@ -62,59 +67,65 @@ model song {
   pass_count  Int      @default(0)
   created_at  DateTime @db.DateTime(0)
   is_delete   Int      @default(0) @db.TinyInt
-  playlist    playlist @relation(fields: [playlist_id], references: [playlist_id], onUpdate: Restrict, map: "song_ibfk_1")
+  playlist    Playlist @relation(fields: [playlist_id], references: [playlist_id], onUpdate: Restrict, map: "song_ibfk_1")
 
   @@index([playlist_id], map: "playlist_id")
+  @@map("song")
 }
 
-model user {
-  user_id       Int            @id @default(autoincrement())
-  kakao_id      String         @db.VarChar(20)
-  refresh_token String?        @db.VarChar(64)
-  status        Int            @default(0) @db.TinyInt
-  created_at    DateTime       @db.DateTime(0)
-  game_session  game_session[]
-  playlist      playlist[]
-  user_answer   user_answer[]
-  user_profile  user_profile[]
-  user_score    user_score[]
+model User {
+  user_id       Int           @id @default(autoincrement())
+  kakao_id      String        @unique @db.VarChar(20)
+  refresh_token String?       @db.VarChar(64)
+  status        Int           @default(0) @db.TinyInt
+  created_at    DateTime      @default(now()) @db.DateTime(0)
+  game_session  GameSession[]
+  playlist      Playlist[]
+  user_answer   UserAnswer[]
+  user_profile  UserProfile[]
+  user_score    UserScore[]
+
+  @@map("user")
 }
 
-model user_answer {
-  answer_id    Int          @id @default(autoincrement())
+model UserAnswer {
+  answer_id    Int         @id @default(autoincrement())
   session_id   Int
   user_id      Int
-  content      String       @db.VarChar(64)
-  is_alert     Int          @default(0) @db.TinyInt
-  created_at   DateTime     @db.DateTime(0)
-  game_session game_session @relation(fields: [session_id], references: [session_id], onUpdate: Restrict, map: "user_answer_ibfk_1")
-  user         user         @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "user_answer_ibfk_2")
+  content      String      @db.VarChar(64)
+  is_alert     Int         @default(0) @db.TinyInt
+  created_at   DateTime    @default(now()) @db.DateTime(0)
+  game_session GameSession @relation(fields: [session_id], references: [session_id], onUpdate: Restrict, map: "user_answer_ibfk_1")
+  user         User        @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "user_answer_ibfk_2")
 
   @@index([session_id], map: "session_id")
   @@index([user_id], map: "user_id")
+  @@map("user_answer")
 }
 
-model user_profile {
+model UserProfile {
   profile_id Int      @id @default(autoincrement())
-  user_id    Int
+  user_id    Int      @unique
   nickname   String   @db.VarChar(20)
-  created_at DateTime @db.DateTime(0)
-  user       user     @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "user_profile_ibfk_1")
+  created_at DateTime @default(now()) @db.DateTime(0)
+  user       User     @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "user_profile_ibfk_1")
 
   @@index([user_id], map: "user_id")
+  @@map("user_profile")
 }
 
-model user_score {
-  score_id     Int          @id @default(autoincrement())
+model UserScore {
+  score_id     Int         @id @default(autoincrement())
   session_id   Int
   user_id      Int
-  score        Int          @default(0)
-  created_at   DateTime     @db.DateTime(0)
-  createdAt    DateTime     @db.DateTime(0)
-  updatedAt    DateTime     @db.DateTime(0)
-  game_session game_session @relation(fields: [session_id], references: [session_id], onUpdate: Restrict, map: "user_score_ibfk_1")
-  user         user         @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "user_score_ibfk_2")
+  score        Int         @default(0)
+  created_at   DateTime    @db.DateTime(0)
+  createdAt    DateTime    @default(now()) @db.DateTime(0)
+  updatedAt    DateTime    @db.DateTime(0)
+  game_session GameSession @relation(fields: [session_id], references: [session_id], onUpdate: Restrict, map: "user_score_ibfk_1")
+  user         User        @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "user_score_ibfk_2")
 
   @@index([session_id], map: "session_id")
   @@index([user_id], map: "user_id")
+  @@map("user_score")
 }
