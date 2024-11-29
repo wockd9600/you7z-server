@@ -1,12 +1,12 @@
 import { Body, Controller, Patch, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
-import { AuthGuard } from '@nestjs/passport';
 
 import { User } from 'src/common/decorators/user.decorator';
 import { UpdateUserNameDto } from './dto';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('user')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
