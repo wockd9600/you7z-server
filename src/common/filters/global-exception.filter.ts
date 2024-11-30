@@ -16,8 +16,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse();
     const request = ctx.getRequest();
 
-    const { method, originalUrl, ip } = request;
+    const { method, originalUrl, ip, user } = request;
     const userAgent = request.headers['user-agent'] || '';
+    const userId = user && user.user_id ? user.user_id : -1;
 
     const statusCode =
       exception instanceof HttpException ? exception.getStatus() : 500;
@@ -27,7 +28,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       exception instanceof Error ? JSON.stringify(exception.stack) : '';
 
     this.logger.error(
-      `[${method}] ${originalUrl} ${userAgent} - ${ip} - ${statusCode}`,
+      `[${method}] ${originalUrl} (${userId}) ${userAgent} - ${ip} - ${statusCode}`,
       errorStack,
       'GlobalExceptionFilter',
     );

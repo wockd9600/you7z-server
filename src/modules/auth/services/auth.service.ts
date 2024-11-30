@@ -100,10 +100,11 @@ export class AuthService {
     loginDto: LoginDto,
   ): Promise<AuthTokenDto | ErrorResponse> {
     const { code } = loginDto;
+    console.log(code);
 
     try {
-      const kakaoUser = await this.loginService.getKaKaoUserInfo(code);
-      // const kakaoUser = { id: '2505005686' };
+      // const kakaoUser = await this.loginService.getKaKaoUserInfo(code);
+      const kakaoUser = { id: '2505005686' };
       const user = await this.prisma.user.findFirst({
         where: { kakao_id: kakaoUser.id },
       });
@@ -113,11 +114,7 @@ export class AuthService {
       }
       return this.login(user);
     } catch (error) {
-      return {
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: '로그인 실패',
-        data: error.message,
-      };
+      throw error;
     }
   }
 
@@ -151,7 +148,7 @@ export class AuthService {
         throw new Error('리프레시 토큰 불일치');
 
       const loginResponseDto = new AuthTokenDto({
-        access_token: this.jwtService.sign(user),
+        access_token: await this.jwtService.signAsync(user),
         refresh_token,
       });
 
