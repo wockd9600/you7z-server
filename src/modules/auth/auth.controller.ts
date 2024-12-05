@@ -6,7 +6,7 @@ import {
   HttpStatus,
   Post,
 } from '@nestjs/common';
-import { AuthService } from './services/auth.service';
+import { AuthService } from './auth.service';
 import { LoginDto, RefreshTokenDto } from './dto';
 
 @Controller('auth')

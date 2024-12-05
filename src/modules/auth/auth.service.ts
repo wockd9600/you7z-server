@@ -1,54 +1,23 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { PrismaService } from '../../core/prisma/prisma.service';
+import { PrismaService } from '../core/prisma/prisma.service';
 import { LoginService } from './login.service';
 import { JwtService } from '@nestjs/jwt';
 
 import { v4 as uuidv4 } from 'uuid';
 
 import { User } from '@prisma/client';
-import { LoginDto, AuthTokenDto, RefreshTokenDto } from '../dto';
-import { KakaoUser } from '../auth.interface';
+import { LoginDto, AuthTokenDto, RefreshTokenDto } from './dto';
 import { ErrorResponse } from 'src/common/constants/error';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly loginService: LoginService,
+    private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
   ) {}
-
-  generateRandomNickname() {
-    const adjectives = [
-      '행복한',
-      '슬기로운',
-      '용감한',
-      '빠른',
-      '지혜로운',
-      '사려깊은',
-      '현명한',
-      '차분한',
-      '열정적인',
-      '친절한',
-    ];
-    const nouns = [
-      '고양이',
-      '사자',
-      '호랑이',
-      '늑대',
-      '여우',
-      '독수리',
-      '부엉이',
-      '거북이',
-      '토끼',
-      '곰',
-    ];
-
-    const randomAdjective =
-      adjectives[Math.floor(Math.random() * adjectives.length)];
-    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-    return `${randomAdjective} ${randomNoun}`;
-  }
 
   async login(user: User): Promise<AuthTokenDto> {
     try {
@@ -77,25 +46,6 @@ export class AuthService {
     }
   }
 
-  async signUp(kakaoUser: KakaoUser): Promise<void> {
-    try {
-      const user = await this.prisma.user.create({
-        data: {
-          kakao_id: kakaoUser.id,
-        },
-      });
-
-      await this.prisma.userProfile.create({
-        data: {
-          user_id: user.user_id,
-          nickname: this.generateRandomNickname(),
-        },
-      });
-    } catch (error) {
-      throw error;
-    }
-  }
-
   async loginOrSignUp(
     loginDto: LoginDto,
   ): Promise<AuthTokenDto | ErrorResponse> {
@@ -105,13 +55,7 @@ export class AuthService {
     try {
       // const kakaoUser = await this.loginService.getKaKaoUserInfo(code);
       const kakaoUser = { id: '2505005686' };
-      const user = await this.prisma.user.findFirst({
-        where: { kakao_id: kakaoUser.id },
-      });
-
-      if (!user) {
-        await this.signUp(kakaoUser);
-      }
+      const user = await this.userService.findOrCreateUser(kakaoUser.id);
       return this.login(user);
     } catch (error) {
       throw error;

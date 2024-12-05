@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 
-import { KakaoUser } from '../auth.interface';
+import { KakaoUser } from './auth.interface';
 
 interface KakaoOAuthRequestData {
   [key: string]: string;
