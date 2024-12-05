@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './modules/core/prisma/prisma.module';
 import { LoggerModule } from './modules/core/logger/logger.module';
 import { LoggingMiddleware } from './common/middlewares/logger.middleware';
+import { GameModule } from './modules/game/game.module';
 
 // 소켓과 함께 사용하기
 // https://velog.io/@hing/NestJS-공식문서-Rate-Limiting
@@ -23,6 +24,7 @@ import { LoggingMiddleware } from './common/middlewares/logger.middleware';
     UserModule,
     AuthModule,
     LoggerModule,
+    GameModule,
   ],
   controllers: [AppController],
   providers: [AppService],
