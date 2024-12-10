@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
 
-type AuthToken = {
+export type AuthToken = {
   access_token?: string;
   refresh_token?: string;
 };
@@ -25,10 +25,4 @@ export class LoginDto {
   @IsString()
   @Length(10, 255)
   readonly code: string;
-}
-
-export class RefreshTokenDto extends AuthTokenDto {
-  constructor({ access_token, refresh_token }: AuthToken) {
-    super({ access_token, refresh_token });
-  }
 }

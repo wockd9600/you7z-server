@@ -1,0 +1,16 @@
+export const GAME_PLAYER_STATUS = {
+  DISCONNECT: -1,
+  NOMAL: 0,
+  LEAVE: 1,
+};
+
+export enum GAME_ROOM_STATUS {
+  NOMAL,
+  DELETED,
+}
+
+export enum GAME_SESSION_STATUS {
+  NOT_STARTED,
+  FINISHED,
+  IN_PROGRESS,
+}

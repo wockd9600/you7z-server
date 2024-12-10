@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  // useAliasForPrismaClient = true
 }
 
 datasource db {
@@ -9,123 +8,119 @@ datasource db {
 }
 
 model GameRoom {
-  room_id      Int           @id @default(autoincrement())
-  room_code    String        @db.VarChar(16)
-  status       Int           @default(0) @db.TinyInt
-  created_at   DateTime      @db.DateTime(0)
-  game_session GameSession[]
+  room_id   Int      @id @default(autoincrement())
+  roomCode  String   @map("room_code") @db.VarChar(16)
+  status    Int      @default(0) @db.TinyInt
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
 
   @@map("game_room")
 }
 
 model GameSession {
-  session_id     Int          @id @default(autoincrement())
+  sessionId      Int          @id @default(autoincrement()) @map("session_id")
   room_id        Int
-  user_id        Int
-  playlist_id    Int
+  userId         Int          @map("user_id")
+  playlistId     Int          @map("playlist_id")
   question_order String?      @db.VarChar(255)
   game_type      Int          @default(1) @db.TinyInt
-  goal_score     Int          @default(15) @db.UnsignedTinyInt
+  goalScore      Int          @default(15) @map("goal_score") @db.UnsignedTinyInt
   status         Int          @default(0) @db.TinyInt
-  created_at     DateTime     @db.DateTime(0)
-  game_room      GameRoom     @relation(fields: [room_id], references: [room_id], onUpdate: Restrict, map: "game_session_ibfk_1")
-  user           User         @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "game_session_ibfk_2")
-  playlist       Playlist     @relation(fields: [playlist_id], references: [playlist_id], onUpdate: Restrict, map: "game_session_ibfk_3")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.DateTime(0)
+  game_player    GamePlayer[]
+  user           User         @relation(fields: [userId], references: [userId], onUpdate: Restrict, map: "game_session_ibfk_2")
+  playlist       Playlist     @relation(fields: [playlistId], references: [playlistId], onUpdate: Restrict, map: "game_session_ibfk_3")
   user_answer    UserAnswer[]
-  user_score     UserScore[]
 
-  @@index([playlist_id], map: "playlist_id")
-  @@index([room_id], map: "room_id")
-  @@index([user_id], map: "user_id")
+  @@index([playlistId], map: "playlistId")
+  @@index([userId], map: "userId")
   @@map("game_session")
 }
 
 model Playlist {
-  playlist_id    Int           @id @default(autoincrement())
-  user_id        Int
+  playlistId     Int           @id @default(autoincrement()) @map("playlist_id")
+  userId         Int           @map("user_id")
   title          String        @db.VarChar(45)
   description    String?       @db.VarChar(300)
   length         Int?          @db.TinyInt
   download_count Int           @default(0) @db.TinyInt
   status         Int           @default(0) @db.TinyInt
-  created_at     DateTime      @db.DateTime(0)
+  created_at     DateTime      @default(now()) @db.DateTime(0)
   game_session   GameSession[]
-  user           User          @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "playlist_ibfk_1")
+  user           User          @relation(fields: [userId], references: [userId], onUpdate: Restrict, map: "playlist_ibfk_1")
   song           Song[]
 
-  @@index([user_id], map: "user_id")
+  @@index([userId], map: "userId")
   @@map("playlist")
 }
 
 model Song {
-  song_id     Int      @id @default(autoincrement())
-  playlist_id Int
+  songId      Int      @id @default(autoincrement()) @map("song_id")
+  playlistId  Int      @map("playlist_id")
   url         String   @db.VarChar(128)
   start_time  String?  @db.VarChar(128)
   answer      String?  @db.VarChar(128)
   description String?  @db.VarChar(128)
   pass_count  Int      @default(0)
-  created_at  DateTime @db.DateTime(0)
+  created_at  DateTime @default(now()) @db.DateTime(0)
   is_delete   Int      @default(0) @db.TinyInt
-  playlist    Playlist @relation(fields: [playlist_id], references: [playlist_id], onUpdate: Restrict, map: "song_ibfk_1")
+  playlist    Playlist @relation(fields: [playlistId], references: [playlistId], onUpdate: Restrict, map: "song_ibfk_1")
 
-  @@index([playlist_id], map: "playlist_id")
+  @@index([playlistId], map: "playlistId")
   @@map("song")
 }
 
 model User {
-  user_id       Int           @id @default(autoincrement())
-  kakao_id      String        @unique @db.VarChar(20)
+  userId        Int           @id @default(autoincrement()) @map("user_id")
+  kakaoId       String        @unique(map: "kakao_id") @map("kakao_id") @db.VarChar(20)
   refresh_token String?       @db.VarChar(64)
   status        Int           @default(0) @db.TinyInt
   created_at    DateTime      @default(now()) @db.DateTime(0)
+  game_player   GamePlayer[]
   game_session  GameSession[]
   playlist      Playlist[]
   user_answer   UserAnswer[]
   user_profile  UserProfile[]
-  user_score    UserScore[]
 
   @@map("user")
 }
 
 model UserAnswer {
   answer_id    Int         @id @default(autoincrement())
-  session_id   Int
-  user_id      Int
+  sessionId    Int         @map("session_id")
+  userId       Int         @map("user_id")
   content      String      @db.VarChar(64)
   is_alert     Int         @default(0) @db.TinyInt
   created_at   DateTime    @default(now()) @db.DateTime(0)
-  game_session GameSession @relation(fields: [session_id], references: [session_id], onUpdate: Restrict, map: "user_answer_ibfk_1")
-  user         User        @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "user_answer_ibfk_2")
+  game_session GameSession @relation(fields: [sessionId], references: [sessionId], onUpdate: Restrict, map: "user_answer_ibfk_1")
+  user         User        @relation(fields: [userId], references: [userId], onUpdate: Restrict, map: "user_answer_ibfk_2")
 
-  @@index([session_id], map: "session_id")
-  @@index([user_id], map: "user_id")
+  @@index([sessionId], map: "sessionId")
+  @@index([userId], map: "userId")
   @@map("user_answer")
 }
 
 model UserProfile {
   profile_id Int      @id @default(autoincrement())
-  user_id    Int      @unique
+  userId     Int      @unique @map("user_id")
   nickname   String   @db.VarChar(20)
   created_at DateTime @default(now()) @db.DateTime(0)
-  user       User     @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "user_profile_ibfk_1")
+  user       User     @relation(fields: [userId], references: [userId], onUpdate: Restrict, map: "user_profile_ibfk_1")
 
-  @@index([user_id], map: "user_id")
+  @@index([userId], map: "userId")
   @@map("user_profile")
 }
 
-model UserScore {
-  score_id     Int         @id @default(autoincrement())
-  session_id   Int
-  user_id      Int
+model GamePlayer {
+  playerId     Int         @id @default(autoincrement()) @map("player_id") @db.UnsignedInt
+  sessionId    Int         @map("session_id")
+  userId       Int         @map("user_id")
   score        Int         @default(0)
-  created_at   DateTime    @db.DateTime(0)
-  createdAt    DateTime    @default(now()) @db.DateTime(0)
-  updatedAt    DateTime    @db.DateTime(0)
-  game_session GameSession @relation(fields: [session_id], references: [session_id], onUpdate: Restrict, map: "user_score_ibfk_1")
-  user         User        @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "user_score_ibfk_2")
+  status       Int         @default(0) @db.TinyInt
+  created_at   DateTime    @default(now()) @db.DateTime(0)
+  game_session GameSession @relation(fields: [sessionId], references: [sessionId], onUpdate: Restrict, map: "game_player_ibfk_1")
+  user         User        @relation(fields: [userId], references: [userId], onUpdate: Restrict, map: "game_player_ibfk_2")
 
-  @@index([session_id], map: "session_id")
-  @@index([user_id], map: "user_id")
-  @@map("user_score")
+  @@index([sessionId], map: "sessionId")
+  @@index([userId], map: "userId")
+  @@map("game_player")
 }

@@ -7,7 +7,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshTokenDto } from './dto';
+import { LoginDto, AuthTokenDto } from './auth.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -21,7 +21,7 @@ export class AuthController {
 
   @Post('refresh')
   refresh(
-    @Body() refreshTokenDto: RefreshTokenDto,
+    @Body() refreshTokenDto: AuthTokenDto,
     @Headers('authorization') authorization: string,
   ) {
     return this.authService.refreshToken(refreshTokenDto, authorization);

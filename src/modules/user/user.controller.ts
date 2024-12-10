@@ -13,8 +13,8 @@ export class UserController {
   @Patch('name')
   updateUserName(
     @Body() updateUserNameDto: UpdateUserNameDto,
-    @User('user_id') user_id: number,
+    @User('userId') userId: number,
   ) {
-    return this.userService.updateUserName(user_id, updateUserNameDto);
+    return this.userService.updateUserName(userId, updateUserNameDto);
   }
 }

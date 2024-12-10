@@ -7,6 +7,7 @@ import {
 import { MyLogger } from 'src/modules/core/logger/logger.service';
 import { logger } from 'src/modules/core/logger/winston.logger';
 
+// @Catch(ServiceException)
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new MyLogger(logger);
