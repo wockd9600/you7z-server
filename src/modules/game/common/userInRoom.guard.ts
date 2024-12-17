@@ -1,11 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { Request } from 'express';
-import { PrismaService } from 'src/modules/core/prisma/prisma.service';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { GameService } from '../game.service';
 
 // Every guard must implement a canActivate() function.
@@ -19,7 +12,6 @@ export class UserInRoomGuard implements CanActivate {
   constructor(
     // private readonly userService: UserService,
     private readonly gameService: GameService,
-    private prisma: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -59,10 +51,5 @@ export class UserInRoomGuard implements CanActivate {
     } catch (error) {
       throw error;
     }
-  }
-
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
   }
 }

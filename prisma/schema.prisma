@@ -8,7 +8,7 @@ datasource db {
 }
 
 model GameRoom {
-  room_id   Int      @id @default(autoincrement())
+  roomId    Int      @id @default(autoincrement()) @map("room_id")
   roomCode  String   @map("room_code") @db.VarChar(16)
   status    Int      @default(0) @db.TinyInt
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
@@ -17,19 +17,19 @@ model GameRoom {
 }
 
 model GameSession {
-  sessionId      Int          @id @default(autoincrement()) @map("session_id")
-  room_id        Int
-  userId         Int          @map("user_id")
-  playlistId     Int          @map("playlist_id")
-  question_order String?      @db.VarChar(255)
-  game_type      Int          @default(1) @db.TinyInt
-  goalScore      Int          @default(15) @map("goal_score") @db.UnsignedTinyInt
-  status         Int          @default(0) @db.TinyInt
-  createdAt      DateTime     @default(now()) @map("created_at") @db.DateTime(0)
-  game_player    GamePlayer[]
-  user           User         @relation(fields: [userId], references: [userId], onUpdate: Restrict, map: "game_session_ibfk_2")
-  playlist       Playlist     @relation(fields: [playlistId], references: [playlistId], onUpdate: Restrict, map: "game_session_ibfk_3")
-  user_answer    UserAnswer[]
+  sessionId     Int          @id @default(autoincrement()) @map("session_id")
+  roomId        Int
+  userId        Int          @map("user_id")
+  playlistId    Int          @map("playlist_id")
+  questionOrder String?      @db.VarChar(255)
+  game_type     Int          @default(1) @db.TinyInt
+  goalScore     Int          @default(15) @map("goal_score") @db.UnsignedTinyInt
+  status        Int          @default(0) @db.TinyInt
+  createdAt     DateTime     @default(now()) @map("created_at") @db.DateTime(0)
+  game_player   GamePlayer[]
+  user          User         @relation(fields: [userId], references: [userId], onUpdate: Restrict, map: "game_session_ibfk_2")
+  playlist      Playlist     @relation(fields: [playlistId], references: [playlistId], onUpdate: Restrict, map: "game_session_ibfk_3")
+  user_answer   UserAnswer[]
 
   @@index([playlistId], map: "playlistId")
   @@index([userId], map: "userId")
@@ -57,7 +57,7 @@ model Song {
   songId      Int      @id @default(autoincrement()) @map("song_id")
   playlistId  Int      @map("playlist_id")
   url         String   @db.VarChar(128)
-  start_time  String?  @db.VarChar(128)
+  startTime   String?  @map("start_time") @db.VarChar(128)
   answer      String?  @db.VarChar(128)
   description String?  @db.VarChar(128)
   pass_count  Int      @default(0)

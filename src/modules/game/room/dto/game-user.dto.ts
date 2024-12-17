@@ -10,6 +10,6 @@ export class GameUserDto {
     this.order = user.playerId;
     this.nickname = user.nickname;
     this.score = user.score;
-    this.isReady = user.ready;
+    this.isReady = user.isReady;
   }
 }

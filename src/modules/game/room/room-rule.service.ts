@@ -4,7 +4,7 @@ import {
   GAME_PLAYER_STATUS,
   GAME_SESSION_STATUS,
 } from 'src/common/constants/game.constant';
-import { UserCannotJoinRoomException } from 'src/common/exception/room.exception';
+import { UserCannotJoinRoomException } from 'src/common/exception/game.exception';
 import { PrismaService } from 'src/modules/core/prisma/prisma.service';
 
 @Injectable()
@@ -14,15 +14,21 @@ export class GameRoomRuleService {
   async canJoinRoom(gameSession: GameSession) {
     const { sessionId, status } = gameSession;
 
-    this.ensureGameNotStarted(status, sessionId);
+    this.ensureGameNotStarted(sessionId, status);
     await this.ensureRoomNotFull(sessionId);
   }
 
-  private ensureGameNotStarted(status: number, sessionId: number) {
+  ensureGameNotStarted(sessionId: number, status: number) {
     if (status !== GAME_SESSION_STATUS.NOT_STARTED) {
       throw new UserCannotJoinRoomException(
         `The game room ${sessionId} has already started.`,
       );
+    }
+  }
+
+  ensureUserIsRoomManager(userId: number, managerId: number) {
+    if (managerId !== userId) {
+      throw new UserCannotJoinRoomException(`user ${userId} is not manager`);
     }
   }
 

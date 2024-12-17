@@ -12,5 +12,5 @@ export enum GAME_ROOM_STATUS {
 export enum GAME_SESSION_STATUS {
   NOT_STARTED,
   FINISHED,
-  IN_PROGRESS,
+  STARTED,
 }

@@ -1,5 +1,5 @@
 import { ErrorCode } from '../errors';
-import { UserNotFound } from '../errors/user.error';
+import { UserNotFound, UserProfileNotFound } from '../errors/user.error';
 import { ServiceException } from './service.exception';
 
 export class UserException extends ServiceException {
@@ -11,5 +11,11 @@ export class UserException extends ServiceException {
 export class NotFoundUserException extends UserException {
   constructor(message?: string) {
     super(UserNotFound, message);
+  }
+}
+
+export class NotFoundUserProfileException extends UserException {
+  constructor(message?: string) {
+    super(UserProfileNotFound, message);
   }
 }

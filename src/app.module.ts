@@ -8,14 +8,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './modules/core/prisma/prisma.module';
 import { LoggerModule } from './modules/core/logger/logger.module';
 import { LoggingMiddleware } from './common/middlewares/logger.middleware';
-import { GameModule } from './modules/game/game.module';
-import { ManagementService } from './modules/game/room/room.service';
-import { ManagementModule } from './modules/game/room/room.module';
+import { RedisModule } from './modules/core/redis/redis.module';
 import { PlaylistModule } from './modules/playlist/playlist.module';
 import { GameModule } from './modules/game/game.module';
-import { RuleModule } from './modules/game/rule/rule.module';
-import { GameplayModule } from './modules/game/session/gameplay.module';
-import { ManagementModule } from './modules/game/room/room.module';
 
 // 소켓과 함께 사용하기
 // https://velog.io/@hing/NestJS-공식문서-Rate-Limiting
@@ -28,17 +23,15 @@ import { ManagementModule } from './modules/game/room/room.module';
       },
     ]),
     PrismaModule,
+    LoggerModule,
+    RedisModule,
     UserModule,
     AuthModule,
-    LoggerModule,
-    GameModule,
-    ManagementModule,
-    GameplayModule,
-    RuleModule,
     PlaylistModule,
+    GameModule,
   ],
   controllers: [AppController],
-  providers: [AppService, ManagementService],
+  providers: [AppService],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

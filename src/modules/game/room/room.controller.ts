@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { GameRoomService } from './room.service';
-import { UserInRoomGuard } from '../common/game.guard';
+import { UserInRoomGuard } from '../common/userInRoom.guard';
 import { AuthGuard } from 'src/modules/auth/auth.guard';
 import { GameContext } from '../common/gameContext.decorator';
 import { GameContextDto } from '../dto';

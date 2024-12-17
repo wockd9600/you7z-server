@@ -4,6 +4,8 @@ import { PrismaService } from '../core/prisma/prisma.service';
 import { getOffsetAndLimit } from 'src/modules/playlist/common/pagination.util';
 import { PlaylistMapper } from './common/playlist.mapper';
 import { buildPlaylistWhereCondition } from './common/playlist-conditions.helper';
+import { Playlist } from '@prisma/client';
+import { NotFoundPlaylistException } from 'src/common/exception/playlist.exception';
 
 @Injectable()
 export class PlaylistService {
@@ -35,6 +37,17 @@ export class PlaylistService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async findPlaylistByPlaylistId(playlistId: number): Promise<Playlist> {
+    const playlist = await this.prisma.playlist.findUnique({
+      where: { playlistId },
+    });
+    if (!playlist)
+      throw new NotFoundPlaylistException(
+        `playlist id ${playlistId} not found`,
+      );
+    return playlist;
   }
 
   // getYoutubeVideoId(url: string) {

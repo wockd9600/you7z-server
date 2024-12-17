@@ -1,9 +1,12 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../core/prisma/prisma.service';
 import { UpdateUserNameDto } from './dto';
-import { User } from '@prisma/client';
+import { User, UserProfile } from '@prisma/client';
 import { generateRandomNickname } from './user.util';
-import { NotFoundUserException } from 'src/common/exception/user.exception';
+import {
+  NotFoundUserException,
+  NotFoundUserProfileException,
+} from 'src/common/exception/user.exception';
 
 @Injectable()
 export class UserService {
@@ -18,10 +21,13 @@ export class UserService {
     //   throw new Error('이미 존재하는 닉네임입니다.');
     // }
 
+    // 어디서할지도 controller? service?
     const { nickname } = updateUserNameDto;
+    const sanitizedNickName = sanitize(nickname);
+
     await this.prisma.userProfile.update({
       where: { userId },
-      data: { nickname },
+      data: { nickname: sanitizedNickName },
     });
     return { status: HttpStatus.OK, message: '이름 변경 완료' };
   }
@@ -37,7 +43,26 @@ export class UserService {
     return user;
   }
 
-  async createUserAndUserProfile(kakaoUser: { id: string }): Promise<User> {
+  async findUserById(userId: number): Promise<User> {
+    const user = await this.prisma.user.findUnique({ where: { userId } });
+    if (!user) throw new NotFoundUserException(`user id ${userId} not found`);
+    return user;
+  }
+
+  async findUserProfileByUserId(userId: number): Promise<UserProfile> {
+    const userProfile = await this.prisma.userProfile.findUnique({
+      where: { userId },
+    });
+    if (!userProfile)
+      throw new NotFoundUserProfileException(
+        `user profile id ${userId} not found`,
+      );
+    return userProfile;
+  }
+
+  private async createUserAndUserProfile(kakaoUser: {
+    id: string;
+  }): Promise<User> {
     const user = await this.prisma.user.create({
       data: {
         kakaoId: kakaoUser.id,
@@ -51,12 +76,6 @@ export class UserService {
       },
     });
 
-    return user;
-  }
-
-  async findUserById(userId: number): Promise<User> {
-    const user = await this.prisma.user.findUnique({ where: { userId } });
-    if (!user) throw new NotFoundUserException(`user id ${userId} not found`);
     return user;
   }
 }

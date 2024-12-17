@@ -1,24 +1,31 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../core/prisma/prisma.service';
 import { GameRoom, GameSession } from '@prisma/client';
 import {
   GAME_PLAYER_STATUS,
   GAME_ROOM_STATUS,
 } from 'src/common/constants/game.constant';
-import { UserCannotJoinRoomException } from 'src/common/exception/room.exception';
+import {
+  GameRoomNotFoundException,
+  GameSessionNotFoundException,
+  ReadyNotFoundException,
+  RoomCodeMissingException,
+  SocreNotFoundException,
+  SongNotFoundException,
+} from 'src/common/exception/game.exception';
+import { RedisService } from '../core/redis/redis.service';
 
 type GameResponse = { gameRoom: GameRoom; gameSession: GameSession };
 
 @Injectable()
 export class GameService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {}
 
   async getGameSessionFromRoomCode(roomCode: string): Promise<GameResponse> {
-    if (!roomCode) throw new BadRequestException('방 번호가 없습니다.');
+    if (!roomCode) throw new RoomCodeMissingException();
 
     const gameRoom = await this.prisma.gameRoom.findFirst({
       where: {
@@ -29,13 +36,12 @@ export class GameService {
       },
       orderBy: { createdAt: 'desc' },
     });
-    if (!gameRoom) throw new NotFoundException('방이 존재하지 않습니다.');
+    if (!gameRoom) throw new GameRoomNotFoundException();
 
     const gameSession = await this.prisma.gameSession.findFirst({
       where: { room_id: gameRoom.room_id },
     });
-    if (!gameSession)
-      throw new NotFoundException('게임 세션 정보를 찾을 수 없습니다.');
+    if (!gameSession) throw new GameSessionNotFoundException();
 
     return { gameRoom, gameSession };
   }
@@ -43,7 +49,14 @@ export class GameService {
   async ensureUserNotInRoom(userId: number, sessionId: number): Promise<void> {
     const isUserInRoom = await this.isUserInRoom(userId, sessionId);
     if (isUserInRoom) {
-      throw new UserCannotJoinRoomException('already user in room');
+      throw new BadRequestException(`already user in room ${sessionId}`);
+    }
+  }
+
+  async ensureUserInRoom(userId: number, sessionId: number): Promise<void> {
+    const isUserInRoom = await this.isUserInRoom(userId, sessionId);
+    if (!isUserInRoom) {
+      throw new BadRequestException(`don't exist user in room ${sessionId}`);
     }
   }
 
@@ -81,5 +94,106 @@ export class GameService {
       where: { userId, status: GAME_PLAYER_STATUS.NOMAL },
     });
     // }
+  }
+
+  async updateGameRoom(
+    gameRoomData: Partial<GameRoom>,
+    prisma?: PrismaService,
+  ) {
+    const { status, roomId } = gameRoomData;
+    const activePrisma = prisma ? prisma : this.prisma;
+    const updateData: any = {};
+
+    if (status !== undefined) updateData.status = status;
+
+    await activePrisma.gameSession.update({
+      where: { roomId },
+      data: updateData,
+    });
+  }
+
+  async updateGameSession(
+    gameRoomData: Partial<GameSession>,
+    prisma?: PrismaService,
+  ) {
+    const { status, sessionId, userId, goalScore, playlistId, questionOrder } =
+      gameRoomData;
+    const activePrisma = prisma ? prisma : this.prisma;
+    const updateData: any = {};
+
+    if (status !== undefined) updateData.status = status;
+    if (userId !== undefined) updateData.userId = userId;
+    if (goalScore !== undefined) updateData.goalScore = goalScore;
+    if (playlistId !== undefined) updateData.playlistId = playlistId;
+    if (questionOrder !== undefined) updateData.questionOrder = questionOrder;
+
+    await activePrisma.gameSession.update({
+      where: { sessionId },
+      data: updateData,
+    });
+  }
+
+  async getCurrentSongId(sessionId: number) {
+    const songId = await this.redisService.get(
+      `session:${sessionId}:currentSong`,
+    );
+    if (!songId) {
+      throw new SongNotFoundException(
+        `No current song found for session: ${sessionId}`,
+      );
+    }
+    return parseInt(songId, 10);
+  }
+
+  async getPlayersScore(users: any[], sessionId: number) {
+    if (users.length === 0) return [];
+
+    const promises = users.map(async (user) => {
+      const score = await this.redisService.get(
+        `session:${sessionId}:users:${user.userId}:score`,
+      );
+      return { userId: user.userId, score: parseInt(score || '0', 10) };
+    });
+
+    const users_score = await Promise.all(promises);
+    return users_score;
+  }
+
+  async getPlayersReady(users: any[], sessionId: number) {
+    if (users.length === 0) return [];
+
+    const promises = users.map(async (user) => {
+      const isReady = await this.redisService.get(
+        `session:${sessionId}:users:${user.userId}:ready`,
+      );
+      return { userId: user.userId, isReady: isReady === 'true' };
+    });
+
+    const users_score = await Promise.all(promises);
+    return users_score;
+  }
+
+  async getPlayerScore(userId: number, sessionId: number) {
+    const score = await this.redisService.get(
+      `session:${sessionId}:users:${userId}:score`,
+    );
+    if (!score) {
+      throw new SocreNotFoundException(
+        `No player score found for session: ${sessionId}, user: ${userId}`,
+      );
+    }
+    return parseInt(score, 10);
+  }
+
+  async getPlayerReady(userId: number, sessionId: number) {
+    const isReady = await this.redisService.get(
+      `session:${sessionId}:users:${userId}:ready`,
+    );
+    if (!isReady) {
+      throw new ReadyNotFoundException(
+        `No player ready found for session: ${sessionId}, user: ${userId}`,
+      );
+    }
+    return isReady === 'true';
   }
 }

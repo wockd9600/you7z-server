@@ -34,6 +34,7 @@ async function createApp(): Promise<NestExpressApplication> {
 
 async function bootstrap() {
   const app = await createApp();
+  // app.useWebSocketAdapter(new JwtSocketAdapter(app));
   await app.listen(process.env.PORT ?? 8000);
 }
 bootstrap();
